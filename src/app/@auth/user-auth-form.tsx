@@ -83,7 +83,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             router.push("/new-entry");
             break;
           case "client":
-            router.push("/client");
+            router.push("/analytics");
             break;
           default:
             router.push("/auth");

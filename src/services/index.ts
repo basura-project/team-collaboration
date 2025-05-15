@@ -450,3 +450,64 @@ export const deleteGarbageEntry = async (params: Params) => {
     throw error;
   }
 };
+
+//Fetch analytics Data
+export const getAnalyticsData = async (
+  fromDate: string,
+  toDate: string,
+) => {
+  try {
+    const response = await apiService.get("analytics", {
+      params: { start_date: fromDate, end_date: toDate },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+};
+
+export const getAnalyticsDataForProperty = async () => {
+  try {
+    const response = await apiService.get("api/client/overview");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+}
+
+interface WasteDataQueryParams {
+  startDate?: string;
+  endDate?: string;
+  clientId?: number;
+  // Add other query parameters as needed
+}
+
+export const getClientWasteData = async (queryParams: WasteDataQueryParams = {}): Promise<any> => {
+  try {
+    const response = await apiService.get("api/waste-data", {
+      params: queryParams,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+}
+
+export const getEnvironmentData = async (material: String, metric: String, weight: Number) => {
+  try {
+    const response = await apiService.get("api/savings/", {
+      params: {
+        material: material,
+        metric: metric,
+        weight: weight
+      }
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching environment data", error);
+    throw error;
+  }
+}

@@ -1,4 +1,7 @@
 "use client";
+import { TZDate } from '@date-fns/tz';
+import { format, addHours } from "date-fns";
+
 import * as React from "react";
 import { useEffect, useState } from "react";
 import {
@@ -117,16 +120,15 @@ export default function SubmissionsList() {
   let firstIndex : number = lastIndex - rowsPerPage;
   let currentItems = submissions.slice(firstIndex, lastIndex);
 
+  
+
   const formatDate = (timeStamp: string) => {
-    const date = new Date(timeStamp);
-    const options: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    };
-    return date.toLocaleString("en-US", options);
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; 
+    const utcDate = new Date(timeStamp);
+    const zonedDate = new TZDate(utcDate, userTimeZone);
+
+    const formattedDate = format(zonedDate, 'PPPp');
+    return formattedDate;
   };
 
 

@@ -220,9 +220,7 @@ const NewEntryPage = () => {
     try {
       setIsSubmitting(true);
 
-      const timestamp = new Date().toLocaleString("en-US", {
-        timeZone: "America/New_York",
-      });
+      const timestamp = new Date().toISOString();
 
       await addGarbageEntry({ ...data, timestamp });
       toast({
