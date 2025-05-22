@@ -2,30 +2,12 @@
 import React, { useEffect, useState } from "react";
 import EditEntryForm from "./edit-entry-form";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ChevronDown, MoreHorizontal, Timer } from "lucide-react";
-import {
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 
 import { getGarbageSubmissions } from "@/services";
 
@@ -47,7 +29,6 @@ interface Submission {
   created_by: string;
 }
 
-
 const EditEntryPage = ({ params: { propertyID } }: any) => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -68,10 +49,9 @@ const EditEntryPage = ({ params: { propertyID } }: any) => {
     fetchData();
   }, []);
 
-  const submission  = submissions.find( item => item.property_id === propertyID);
-
-  console.log(submission)
-
+  const submission = submissions.find(
+    (item) => item.property_id === propertyID
+  );
 
   return (
     <>
@@ -86,7 +66,11 @@ const EditEntryPage = ({ params: { propertyID } }: any) => {
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
-      {!isLoading && submission !== undefined ? <EditEntryForm entry={submission}  /> : <p>Loading...</p> }
+      {!isLoading && submission !== undefined ? (
+        <EditEntryForm entry={submission} />
+      ) : (
+        <p>Loading...</p>
+      )}
     </>
   );
 };

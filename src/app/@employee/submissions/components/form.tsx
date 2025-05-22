@@ -1,8 +1,8 @@
 "use client";
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect } from "react";
 
 //context
-import { useUser } from '@/store';
+import { useUser } from "@/store";
 
 import { cn } from "@/lib/utils";
 import { Icons } from "@/components/ui/icons";
@@ -33,26 +33,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from 'react';
+import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
 
 //services
-import { addGarbageEntry, getProperties, getPropertyDetailsForAddEntry, getGarbageAttributes } from "@/services";
+import {
+  addGarbageEntry,
+  getProperties,
+  getPropertyDetailsForAddEntry,
+  getGarbageAttributes,
+} from "@/services";
 
 interface GarbageAttributes {
   [key: string]: number;
 }
 
 // Mock property data
-type CommonStringFields = 
-  'property_id' | 
-  'client_id' | 
-  'client_type' | 
-  'client_name' | 
-  'borough_name' | 
-  'street_name' | 
-  'chute_present' | 
-  'timestamp';
+type CommonStringFields =
+  | "property_id"
+  | "client_id"
+  | "client_type"
+  | "client_name"
+  | "borough_name"
+  | "street_name"
+  | "chute_present"
+  | "timestamp";
 
 type Property = {
   [K in CommonStringFields]: string;
@@ -71,27 +76,30 @@ const formSchema = z.object({
   timestamp: z.string().min(2, "Timestamp must be included"),
   chute_present: z.enum(["yes", "no"]),
   created_by: z.string().min(1, "Created by"),
-  garbage_attributes: z.record(z.string(), z.number().optional())
+  garbage_attributes: z
+    .record(z.string(), z.number().optional())
     .refine(
-      (data) => Object.values(data).some(value => value !== undefined && value > 0),
+      (data) =>
+        Object.values(data).some((value) => value !== undefined && value > 0),
       {
-        message: "At least one garbage type must have a value greater than 0"
+        message: "At least one garbage type must have a value greater than 0",
       }
-    )
+    ),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export const EditEntryForm = ({ entry }: any) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [properties, setProperties ] = useState<Property[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [propertiesLoading, setPropertiesLoading] = useState(false);
-  const [garbageAttributes, setGarbageAttributes] = useState<GarbageAttributes[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [garbageAttributes, setGarbageAttributes] = useState<
+    GarbageAttributes[]
+  >([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const { user } = useUser();
 
-  useEffect(()=> {
-
+  useEffect(() => {
     const fetchAttributes = async () => {
       try {
         const res = await getGarbageAttributes();
@@ -100,11 +108,10 @@ export const EditEntryForm = ({ entry }: any) => {
       } catch (err) {
         console.error(err);
       }
-    }
+    };
 
     fetchAttributes();
-      
-  }, [])
+  }, []);
 
   const getPropertiesList = async () => {
     setPropertiesLoading(true);
@@ -115,7 +122,7 @@ export const EditEntryForm = ({ entry }: any) => {
     } catch (err) {
       console.error(err);
     }
-  }
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -128,19 +135,27 @@ export const EditEntryForm = ({ entry }: any) => {
       chute_present: "yes",
       timestamp: new Date().toISOString(),
       created_by: user.name,
-      garbage_attributes: garbageAttributes.reduce((acc, { attribute_name }) => ({
-        ...acc,
-        [attribute_name]: undefined
-      }), {})
+      garbage_attributes: garbageAttributes.reduce(
+        (acc, { attribute_name }) => ({
+          ...acc,
+          [attribute_name]: undefined,
+        }),
+        {}
+      ),
     },
   });
 
-  const { handleSubmit, setValue, formState: { errors }, reset } = form;
+  const {
+    handleSubmit,
+    setValue,
+    formState: { errors },
+    reset,
+  } = form;
 
   const handlePropertySelect = async (propertyId: string) => {
-    const property = properties.find(prop => prop.property_id === propertyId);
+    const property = properties.find((prop) => prop.property_id === propertyId);
     if (property) {
-      setValue('property_id', property.property_id);
+      setValue("property_id", property.property_id);
       try {
         const propertyDetails = await getPropertyDetailsForAddEntry(propertyId);
         const property = propertyDetails.data;
@@ -151,13 +166,13 @@ export const EditEntryForm = ({ entry }: any) => {
         setValue("street_name", property.street_name ?? "");
         setValue("chute_present", property.chute_present ? "yes" : "no");
       } catch (error: any) {
-        if(error.status === 404){
+        if (error.status === 404) {
           toast({
             title: "Error",
             description: "Client not found",
             variant: "destructive",
           });
-        }        
+        }
       }
     }
   };
@@ -174,11 +189,11 @@ export const EditEntryForm = ({ entry }: any) => {
     try {
       setIsSubmitting(true);
 
-      const timestamp = new Date().toLocaleString('en-US', { 
-        timeZone: 'America/New_York' 
+      const timestamp = new Date().toLocaleString("en-US", {
+        timeZone: "America/New_York",
       });
 
-      await addGarbageEntry({...data, timestamp});
+      await addGarbageEntry({ ...data, timestamp });
       toast({
         title: "Success",
         description: "Garbage entry has been submitted successfully.",
@@ -201,18 +216,18 @@ export const EditEntryForm = ({ entry }: any) => {
 
   return (
     <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-2xl">Edit entry</CardTitle>
-          <p className="text-md text-gray-800 pt-0">
-            Add a new garbage entry, verify all the details before submission.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
+      <CardHeader>
+        <CardTitle className="text-2xl">Edit entry</CardTitle>
+        <p className="text-md text-gray-800 pt-0">
+          Add a new garbage entry, verify all the details before submission.
+        </p>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-20">
               <div className="space-y-4">
-              <FormField
+                <FormField
                   control={form.control}
                   name="property_id"
                   render={({ field }) => (
@@ -230,20 +245,7 @@ export const EditEntryForm = ({ entry }: any) => {
                           <SelectTrigger id="propertyId">
                             <SelectValue placeholder="Select" />
                           </SelectTrigger>
-                          <SelectContent>
-                            {/* <input type="text" placeholder="Search property ID" value={searchTerm} onChange={handleSearchChange} /> */}
-                            {/* {propertiesLoading? (
-                              <div className='flex justify-center'>
-                                <Icons.spinner className="mr-2 h-4 w-4 animate-spin text-center" />
-                              </div>
-                            ) : (
-                              properties.map((property) => (
-                                <SelectItem key={property.property_id} value={property.property_id}>
-                                  {property.property_id}
-                                </SelectItem> )
-                            ))} */}
-                            
-                          </SelectContent>
+                          <SelectContent></SelectContent>
                         </Select>
                       </FormControl>
                       <FormMessage />
@@ -293,7 +295,7 @@ export const EditEntryForm = ({ entry }: any) => {
                   )}
                 />
 
-              <FormField
+                <FormField
                   control={form.control}
                   name="client_name"
                   render={({ field }) => (
@@ -313,7 +315,7 @@ export const EditEntryForm = ({ entry }: any) => {
                       <FormMessage />
                     </FormItem>
                   )}
-              />
+                />
 
                 <FormField
                   control={form.control}
@@ -337,33 +339,35 @@ export const EditEntryForm = ({ entry }: any) => {
                   )}
                 />
                 <FormField
-                    control={form.control}
-                    name="street_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel htmlFor="streetName">Street Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            id="streetName"
-                            placeholder="Street Name"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />  
+                  control={form.control}
+                  name="street_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="streetName">Street Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          disabled
+                          id="streetName"
+                          placeholder="Street Name"
+                          type="text"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
                   name="chute_present"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel htmlFor="chutePresent">Chute Present</FormLabel>
+                      <FormLabel htmlFor="chutePresent">
+                        Chute Present
+                      </FormLabel>
                       <FormControl>
                         <RadioGroup
                           disabled
@@ -385,7 +389,6 @@ export const EditEntryForm = ({ entry }: any) => {
                     </FormItem>
                   )}
                 />
-
               </div>
 
               <div className="space-y-4">
@@ -398,7 +401,9 @@ export const EditEntryForm = ({ entry }: any) => {
                     render={({ field }) => (
                       <FormItem>
                         <div className="flex items-center gap-4">
-                          <FormLabel className="w-24 leading-6">{attribute_name}</FormLabel>
+                          <FormLabel className="w-24 leading-6">
+                            {attribute_name}
+                          </FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -406,7 +411,9 @@ export const EditEntryForm = ({ entry }: any) => {
                               {...field}
                               onChange={(e) => {
                                 const value = e.target.valueAsNumber;
-                                field.onChange(isNaN(value) ? undefined : value);
+                                field.onChange(
+                                  isNaN(value) ? undefined : value
+                                );
                               }}
                               className={cn(
                                 "w-20",
@@ -422,22 +429,22 @@ export const EditEntryForm = ({ entry }: any) => {
                     )}
                   />
                 ))}
-                
+
                 {/* Show the root error for garbage_attributes */}
                 {errors.garbage_attributes?.root && (
                   <p className="text-sm text-red-500 mt-1">
                     {errors.garbage_attributes.root.message}
                   </p>
                 )}
-                
-                {/* Alternative way to show errors */}
-                {errors.garbage_attributes && 'message' in errors.garbage_attributes && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {/* {errors.garbage_attributes.message} */}
-                  </p>
-                )}
-              </div>
 
+                {/* Alternative way to show errors */}
+                {errors.garbage_attributes &&
+                  "message" in errors.garbage_attributes && (
+                    <p className="text-sm text-red-500 mt-1">
+                      {/* {errors.garbage_attributes.message} */}
+                    </p>
+                  )}
+              </div>
             </div>
             <div className="flex justify-start gap-4 mt-6">
               <Button type="button" variant="outline" onClick={handleClear}>
@@ -447,9 +454,9 @@ export const EditEntryForm = ({ entry }: any) => {
                 {isSubmitting ? "Submitting..." : "Submit"}
               </Button>
             </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 };

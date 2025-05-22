@@ -1,8 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function TableSkeleton({rows} : {rows: number}) {
+export function TableSkeleton({ rows }: { rows: number }) {
   return (
-    <div className="w-full">
+    <div className="w-full mt-2">
       <table className="w-full border-collapse table-auto">
         <thead>
           <tr>

@@ -22,26 +22,41 @@ interface PaginationProps {
   rowsPerPage: number;
   data: any;
   onPageChange: (page: number) => void;
+  onRowsPerPageChange?: (rows: number) => void;
 }
-
 
 function Pagination(props: PaginationProps) {
   const [page, setPage] = useState(props.currentPage || 0);
   const [rows, setRows] = useState(props.rowsPerPage || 0);
   const [totalItems, setTotalItems] = useState(props.data?.length || 0);
-  const [totalPages, setTotalPages] = useState(Math.ceil(props.data?.length / props.rowsPerPage));
+  const [totalPages, setTotalPages] = useState(
+    Math.ceil(props.data?.length / props.rowsPerPage)
+  );
 
-  const { onPageChange } = props;
+  const { onPageChange, onRowsPerPageChange } = props;
+
+  // Update internal state when props change
+  useEffect(() => {
+    setPage(props.currentPage);
+    setRows(props.rowsPerPage);
+    setTotalItems(props.data?.length || 0);
+    setTotalPages(Math.ceil((props.data?.length || 0) / props.rowsPerPage));
+  }, [props.currentPage, props.rowsPerPage, props.data]);
 
   const handlePageChange = (page: number) => {
-      setPage(page);
-      onPageChange(page);
+    setPage(page);
+    onPageChange(page);
   };
 
   // Handle rows per page change
   const handleRowsPerPageChange = (value: string) => {
-    setRows(parseInt(value, 10));
+    const newRows = parseInt(value, 10);
+    setRows(newRows);
     setPage(1);
+    onPageChange(1);
+    if (onRowsPerPageChange) {
+      onRowsPerPageChange(newRows);
+    }
   };
 
   return (
@@ -64,9 +79,15 @@ function Pagination(props: PaginationProps) {
               <SelectGroup>
                 <SelectLabel>Rows</SelectLabel>
                 <SelectItem value="5">5</SelectItem>
-                <SelectItem disabled={totalItems < 10} value="10">10</SelectItem>
-                <SelectItem disabled={totalItems < 15} value="15">15</SelectItem>
-                <SelectItem disabled={totalItems < 20} value="20">20</SelectItem>
+                <SelectItem disabled={totalItems < 10} value="10">
+                  10
+                </SelectItem>
+                <SelectItem disabled={totalItems < 15} value="15">
+                  15
+                </SelectItem>
+                <SelectItem disabled={totalItems < 20} value="20">
+                  20
+                </SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>

@@ -1,7 +1,6 @@
 "use client";
 import React, { Suspense } from "react";
 import SubmissionsList from "./components/list";
-import TableSkeleton from "@/components/ui/skeleton/TableSkeleton";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -10,8 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator"
-
+import { Separator } from "@/components/ui/separator";
 
 const SubmissionsPage = () => {
   return (
@@ -29,14 +27,9 @@ const SubmissionsPage = () => {
       </Breadcrumb>
       <Card className="p-8">
         <div className="space-y-0.5">
-          <h2 className="text-xl font-semibold tracking-tight">
-            Submissions
-          </h2>
-          <p className="text-sm text-muted-foreground">
-           List of submissions
-          </p>
+          <h2 className="text-xl font-semibold tracking-tight">Submissions</h2>
+          <p className="text-sm text-muted-foreground">List of submissions</p>
         </div>
-        <Separator className="my-4" />
         <SubmissionsList />
       </Card>
     </>
