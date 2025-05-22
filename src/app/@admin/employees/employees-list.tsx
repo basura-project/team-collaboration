@@ -52,12 +52,14 @@ export default function EmployeesList({
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [deleteModalOpen, setDeleteModalOpen] = React.useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedEmployee, setSelectedEmployee] = React.useState<string>("");
   const { toast } = useToast();
   const router = useRouter();
-  const { data, isDataLoading, error, setData} = usePreloader(getEmployees,"Employees");
-
+  const { data, isDataLoading, error, setData } = usePreloader(
+    getEmployees,
+    "Employees"
+  );
 
   function viewEmployee(empId: string) {
     router.push(`employees/view/${empId}`);
@@ -81,7 +83,9 @@ export default function EmployeesList({
     try {
       let res: any = await deleteEmployee(empId);
       if (res) {
-        let filteredEmployees = data.filter((employee: any) => employee.employee_id !== empId);
+        let filteredEmployees = data.filter(
+          (employee: any) => employee.employee_id !== empId
+        );
         console.log(filteredEmployees);
         setData(filteredEmployees);
         toast({
@@ -104,10 +108,10 @@ export default function EmployeesList({
 
   const handleOnPageChange = (page: number) => {
     setCurrentPage(page);
-};
+  };
 
-  let lastIndex : number = currentPage * rowsPerPage;
-  let firstIndex : number = lastIndex - rowsPerPage;
+  let lastIndex: number = currentPage * rowsPerPage;
+  let firstIndex: number = lastIndex - rowsPerPage;
   let currentItems = data && data.slice(firstIndex, lastIndex);
 
   if (error) {
@@ -119,103 +123,108 @@ export default function EmployeesList({
       {isDataLoading ? (
         <TableSkeleton rows={5} />
       ) : (
-      <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Employee Id</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone No</TableHead>
-            <TableHead className="text-right">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {currentItems?.map((row: any) => {
-            return (
-              <TableRow key={row.employee_id}>
-                <TableCell>{row.employee_id}</TableCell>
-                <TableCell>
-                  {row.name && row.name}
-                </TableCell>
-                <TableCell>{row.email}</TableCell>
-                <TableCell>{row.contact}</TableCell>
-                <TableCell className="text-right">
-                  <AlertDialog open={deleteModalOpen}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Ellipsis size={16} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-16">
-                        <DropdownMenuItem
-                          className="cursor-pointer"
-                          onClick={() => viewEmployee(row.employee_id)}
-                        >
-                          <View size={16} />
-                          <span className="pl-2">View</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer"
-                          onClick={() => editEmployee(row.employee_id)}
-                        >
-                          <PencilLine size={16} />
-                          <span className="pl-2">Edit</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className="cursor-pointer"
-                        >
-                          <Button
-                              variant="link"
-                              className="-mx-[14px] -my-2 font-normal hover:no-underline"
-                              onClick={() => openDeleteModal(row.employee_id)}
-                            >
-                              <Trash2 size={16} />
-                              <span className="pl-2">Delete</span>
-                            </Button>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Are you absolutely sure?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently
-                          delete the employee and remove the data.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel
-                          onClick={() => {
-                            closeDeleteModal();
-                          }}
-                        >
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction
-                          disabled={isLoading}
-                          onClick={() => deleteEmployeeById(selectedEmployee)}>
-                          {isLoading ? (
-                            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            ""
-                          )}
-                          Continue
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TableCell>
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee Id</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Phone No</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-      <Pagination data={data} currentPage={currentPage} rowsPerPage={rowsPerPage} onPageChange={handleOnPageChange} />
-      </>
+            </TableHeader>
+            <TableBody>
+              {currentItems?.map((row: any) => {
+                return (
+                  <TableRow key={row.employee_id}>
+                    <TableCell>{row.employee_id}</TableCell>
+                    <TableCell>{row.name && row.name}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>{row.contact}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog open={deleteModalOpen}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Ellipsis size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-16">
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => viewEmployee(row.employee_id)}
+                            >
+                              <View size={16} />
+                              <span className="pl-2">View</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => editEmployee(row.employee_id)}
+                            >
+                              <PencilLine size={16} />
+                              <span className="pl-2">Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="cursor-pointer">
+                              <Button
+                                variant="link"
+                                className="-mx-[14px] -my-2 font-normal hover:no-underline"
+                                onClick={() => openDeleteModal(row.employee_id)}
+                              >
+                                <Trash2 size={16} />
+                                <span className="pl-2">Delete</span>
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will
+                              permanently delete the employee and remove the
+                              data.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel
+                              onClick={() => {
+                                closeDeleteModal();
+                              }}
+                            >
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={isLoading}
+                              onClick={() =>
+                                deleteEmployeeById(selectedEmployee)
+                              }
+                            >
+                              {isLoading ? (
+                                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                ""
+                              )}
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <Pagination
+            data={data}
+            currentPage={currentPage}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handleOnPageChange}
+          />
+        </>
       )}
     </div>
   );

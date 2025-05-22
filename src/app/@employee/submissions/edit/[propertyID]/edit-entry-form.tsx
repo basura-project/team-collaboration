@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 //services
 import {
@@ -42,11 +43,25 @@ import {
   getProperties,
   getPropertyDetailsForAddEntry,
   getGarbageAttributes,
+  getGarbageSubmissions,
 } from "@/services";
-import { timeStamp } from "console";
 
 interface GarbageAttributes {
   [key: string]: number;
+}
+
+interface Submission {
+  id: string;
+  property_id: string;
+  client_id: string;
+  client_type: string;
+  client_name: string;
+  borough_name: string;
+  street_name: string;
+  chute_present: boolean;
+  timestamp: string;
+  garbage_attributes: GarbageAttributes;
+  created_by: string;
 }
 
 // Mock property data
@@ -90,7 +105,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const EditEntryForm = ({ entry }: any) => {
+const EditEntryForm = ({ propertyID }: { propertyID: string }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState(properties);
@@ -99,16 +114,63 @@ const EditEntryForm = ({ entry }: any) => {
     GarbageAttributes[]
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoadingAttributes, setIsLoadingAttributes] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [entry, setEntry] = useState<Submission | null>(null);
 
   useEffect(() => {
-    form.setValue("property_id", entry.property_id);
+    const fetchSubmission = async () => {
+      try {
+        const submissions = await getGarbageSubmissions();
+        const submission = submissions.find(
+          (item: Submission) => item.property_id === propertyID
+        );
+        if (submission) {
+          setEntry(submission);
+          form.setValue("property_id", submission.property_id);
+          form.setValue("client_id", submission.client_id);
+          form.setValue("client_type", submission.client_type);
+          form.setValue("client_name", submission.client_name);
+          form.setValue("borough_name", submission.borough_name);
+          form.setValue(
+            "chute_present",
+            submission.chute_present ? "yes" : "no"
+          );
+          form.setValue("created_by", submission.created_by);
+          form.setValue(
+            "garbage_attributes",
+            Object.fromEntries(
+              Object.entries(submission.garbage_attributes).map(
+                ([key, value]) => [key, Number(value)]
+              )
+            )
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching submission:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load submission data",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
+    fetchSubmission();
+  }, [propertyID]);
+
+  useEffect(() => {
     const fetchAttributes = async () => {
+      setIsLoadingAttributes(true);
       try {
         const res = await getGarbageAttributes();
         setGarbageAttributes(res);
       } catch (err) {
         console.error(err);
+      } finally {
+        setIsLoadingAttributes(false);
       }
     };
 
@@ -136,19 +198,14 @@ const EditEntryForm = ({ entry }: any) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      property_id: entry.property_id,
-      client_id: entry.client_id,
-      client_type: entry.client_type,
-      client_name: entry.client_name,
-      borough_name: entry.borough_name,
-      chute_present: entry.chute_present,
-      created_by: entry.created_by,
-      garbage_attributes: Object.fromEntries(
-        Object.entries(entry.garbage_attributes).map(([key, value]) => [
-          key,
-          Number(value),
-        ])
-      ),
+      property_id: "",
+      client_id: "",
+      client_type: "",
+      client_name: "",
+      borough_name: "",
+      chute_present: "no",
+      created_by: "",
+      garbage_attributes: {},
     },
   });
 
@@ -231,263 +288,278 @@ const EditEntryForm = ({ entry }: any) => {
           </p>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-20">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="property_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel htmlFor="propertyId">Property Id</FormLabel>
-                        <FormControl>
-                          <Select
-                            value={field.value}
-                            onValueChange={(value) => {
-                              field.onChange(value); // Update the form state
-                              handlePropertySelect(value); // Fetch additional details
-                            }}
-                            onOpenChange={handleOnOpenChange}
-                          >
-                            <SelectTrigger id="propertyId">
-                              <SelectValue placeholder="Select">
-                                {field.value && field.value}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <Input
-                                type="text"
-                                placeholder="Search property ID"
-                                value={searchTerm}
-                                onChange={handleSearchChange}
-                              />
-                              {propertiesLoading ? (
-                                <div className="pt-4 pb-2 flex justify-center">
-                                  <Icons.spinner className="mr-2 h-4 w-4 animate-spin text-center" />
-                                </div>
-                              ) : (
-                                filteredProperties.map((property) => (
-                                  <SelectItem
-                                    key={property.property_id}
-                                    value={property.property_id}
-                                  >
-                                    {property.property_id}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="client_id"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Id</FormLabel>
-                        <FormControl>
-                          <Input
-                            id="clientID"
-                            placeholder="Client Id"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="client_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Type</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            id="clientType"
-                            placeholder="Client Type"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="client_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Client Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            id="Name"
-                            placeholder="Name"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="borough_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel htmlFor="boroughName">
-                          Borough Name
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            id="boroughName"
-                            placeholder="Name"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="street_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel htmlFor="streetName">Street Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            id="streetName"
-                            placeholder="Street Name"
-                            type="text"
-                            autoCapitalize="none"
-                            autoCorrect="off"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="chute_present"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel htmlFor="chutePresent">
-                          Chute Present
-                        </FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            disabled
-                            value={field.value}
-                            onValueChange={field.onChange}
-                            className="flex"
-                          >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="yes" id="r1" />
-                              <Label htmlFor="r1">Yes</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="no" id="r2" />
-                              <Label htmlFor="r2">No</Label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-medium text-lg">Garbage Segregation</h3>
-                  {garbageAttributes.map(({ attribute_name }, index) => (
+          {isLoading ? (
+            <div className="flex space-y-6">
+              <ListSkeleton rows={8} />
+            </div>
+          ) : (
+            <Form {...form}>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 sm:gap-20">
+                  <div className="space-y-4">
                     <FormField
-                      key={attribute_name}
                       control={form.control}
-                      name={`garbage_attributes.${attribute_name}`}
+                      name="property_id"
                       render={({ field }) => (
                         <FormItem>
-                          <div className="flex items-center gap-4">
-                            <FormLabel className="w-24 leading-6">
-                              {attribute_name}
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                id={`garbage-attribute-${attribute_name}`}
-                                {...field}
-                                onChange={(e) => {
-                                  const value = e.target.valueAsNumber;
-                                  field.onChange(
-                                    isNaN(value) ? undefined : value
-                                  );
-                                }}
-                                className={cn(
-                                  "w-20",
-                                  errors.garbage_attributes && "border-red-500"
+                          <FormLabel htmlFor="propertyId">
+                            Property Id
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value); // Update the form state
+                                handlePropertySelect(value); // Fetch additional details
+                              }}
+                              onOpenChange={handleOnOpenChange}
+                            >
+                              <SelectTrigger id="propertyId">
+                                <SelectValue placeholder="Select">
+                                  {field.value && field.value}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <Input
+                                  type="text"
+                                  placeholder="Search property ID"
+                                  value={searchTerm}
+                                  onChange={handleSearchChange}
+                                />
+                                {propertiesLoading ? (
+                                  <div className="pt-4 pb-2 flex justify-center">
+                                    <Icons.spinner className="mr-2 h-4 w-4 animate-spin text-center" />
+                                  </div>
+                                ) : (
+                                  filteredProperties.map((property) => (
+                                    <SelectItem
+                                      key={property.property_id}
+                                      value={property.property_id}
+                                    >
+                                      {property.property_id}
+                                    </SelectItem>
+                                  ))
                                 )}
-                              />
-                            </FormControl>
-                            <span className="text-gray-500">lbs</span>
-                          </div>
-                          {/* Show individual field errors if needed */}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  ))}
+                    <FormField
+                      control={form.control}
+                      name="client_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Id</FormLabel>
+                          <FormControl>
+                            <Input
+                              id="clientID"
+                              placeholder="Client Id"
+                              type="text"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="client_type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Type</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled
+                              id="clientType"
+                              placeholder="Client Type"
+                              type="text"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  {/* Show the root error for garbage_attributes */}
-                  {errors.garbage_attributes?.root && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.garbage_attributes.root.message}
-                    </p>
-                  )}
+                    <FormField
+                      control={form.control}
+                      name="client_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled
+                              id="Name"
+                              placeholder="Name"
+                              type="text"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  {/* Alternative way to show errors */}
-                  {errors.garbage_attributes &&
-                    "message" in errors.garbage_attributes && (
+                    <FormField
+                      control={form.control}
+                      name="borough_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel htmlFor="boroughName">
+                            Borough Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled
+                              id="boroughName"
+                              placeholder="Name"
+                              type="text"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="street_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel htmlFor="streetName">
+                            Street Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              disabled
+                              id="streetName"
+                              placeholder="Street Name"
+                              type="text"
+                              autoCapitalize="none"
+                              autoCorrect="off"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="chute_present"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel htmlFor="chutePresent">
+                            Chute Present
+                          </FormLabel>
+                          <FormControl>
+                            <RadioGroup
+                              disabled
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              className="flex"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="yes" id="r1" />
+                                <Label htmlFor="r1">Yes</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="no" id="r2" />
+                                <Label htmlFor="r2">No</Label>
+                              </div>
+                            </RadioGroup>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-medium text-lg">Garbage Segregation</h3>
+                    {isLoadingAttributes ? (
+                      <ListSkeleton rows={4} />
+                    ) : (
+                      garbageAttributes.map(({ attribute_name }, index) => (
+                        <FormField
+                          key={attribute_name}
+                          control={form.control}
+                          name={`garbage_attributes.${attribute_name}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex items-center gap-4">
+                                <FormLabel className="w-24 leading-6">
+                                  {attribute_name}
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    id={`garbage-attribute-${attribute_name}`}
+                                    {...field}
+                                    onChange={(e) => {
+                                      const value = e.target.valueAsNumber;
+                                      field.onChange(
+                                        isNaN(value) ? undefined : value
+                                      );
+                                    }}
+                                    className={cn(
+                                      "w-20",
+                                      errors.garbage_attributes &&
+                                        "border-red-500"
+                                    )}
+                                  />
+                                </FormControl>
+                                <span className="text-gray-500">lbs</span>
+                              </div>
+                              {/* Show individual field errors if needed */}
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ))
+                    )}
+
+                    {/* Show the root error for garbage_attributes */}
+                    {errors.garbage_attributes?.root && (
                       <p className="text-sm text-red-500 mt-1">
-                        {/* {errors.garbage_attributes.message} */}
+                        {errors.garbage_attributes.root.message}
                       </p>
                     )}
+
+                    {/* Alternative way to show errors */}
+                    {errors.garbage_attributes &&
+                      "message" in errors.garbage_attributes && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {/* {errors.garbage_attributes.message} */}
+                        </p>
+                      )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-start gap-4 mt-6">
-                <Button type="button" variant="outline" onClick={handleClear}>
-                  Clear
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Submitting..." : "Submit"}
-                </Button>
-              </div>
-            </form>
-          </Form>
+                <div className="flex justify-start gap-4 mt-6">
+                  <Button type="button" variant="outline" onClick={handleClear}>
+                    Clear
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Submitting..." : "Submit"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
         </CardContent>
       </Card>
     </>

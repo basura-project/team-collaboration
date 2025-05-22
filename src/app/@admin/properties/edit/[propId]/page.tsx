@@ -7,6 +7,7 @@ import { getEmployeeDetails } from "@/services/index";
 
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 import EditResidentForm from "../../components/property-forms/resident";
 
@@ -101,9 +102,7 @@ export default function EditEmployee({ params: { propId } }: any) {
             </h2>
           </div>
           <Separator className="my-6" />
-          {isLoading && (
-            <p className="font-regular space-y-2 pt-2 md:block">Loading...</p>
-          )}
+          {isLoading && <ListSkeleton rows={8} />}
           {!isLoading && isError == "" && (
             <div className="grid gap-2 lg:max-w-sm">
               <EditResidentForm edit={true} propertyDetails={propertyDetails} />

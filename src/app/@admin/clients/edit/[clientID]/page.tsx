@@ -7,6 +7,7 @@ import { getClientDetails } from "@/services/index";
 
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 import EditClientForm from "./edit-client-form";
 
@@ -67,9 +68,7 @@ export default function EditClient({ params: { clientID } }: any) {
             </h2>
           </div>
           <Separator className="my-6" />
-          {isLoading && (
-            <p className="font-regular space-y-2 pt-2 md:block">Loading...</p>
-          )}
+          {isLoading && <ListSkeleton rows={8} />}
           {!isLoading && isError == "" && (
             <div className="grid gap-2 lg:max-w-sm">
               <EditClientForm clientDetails={clientDetails} />

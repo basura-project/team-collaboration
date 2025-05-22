@@ -203,7 +203,7 @@ export const addProperty = async (propertyDetails: any) => {
 export const getProperties = async () => {
   try {
     const response = await apiService.get("properties", {
-      params: { sort_by: "property_id", sort_order: "asc" },
+      params: { sort_by: "property_id", sort_order: "desc" },
     });
     return response.data;
   } catch (error) {
@@ -267,7 +267,7 @@ export const deleteProperty = async (propertyId: string) => {
 export const getClients = async () => {
   try {
     const response = await apiService.get("clients", {
-      params: { sort_by: "client_id", sort_order: "asc" },
+      params: { sort_by: "client_id", sort_order: "desc" },
     });
     return response.data;
   } catch (error) {
