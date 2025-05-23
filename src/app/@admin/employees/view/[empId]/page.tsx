@@ -7,6 +7,7 @@ import { getEmployeeDetails } from "@/services/index";
 import { PencilLine } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 import {
   Breadcrumb,
@@ -64,62 +65,74 @@ export default function ViewEmployee({ params: { empId } }: any) {
             </h2>
           </div>
           <Separator className="my-6" />
-          {isLoading && (
-            <p className="font-regular space-y-2 pt-2 md:block">Loading...</p>
-          )}
+          {isLoading && <ListSkeleton rows={8} />}
           {!isLoading && isError == "" && (
             <div className="flex-1 py-2">
               <div className="mb-3">
-                <p className="font-medium">Employee Id</p>
-                <p className="font-normal">{empDetails.employee_id}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Employee Id
+                </h3>
+                <p className="mt-1">{empDetails.employee_id}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">First Name</p>
-                <p className="font-normal">{empDetails.name.firstname}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  First Name
+                </h3>
+                <p className="mt-1">{empDetails.name.firstname}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Middle Name</p>
-                <p className="font-normal">
+                <h3 className="text-sm font-medium text-gray-500">
+                  Middle Name
+                </h3>
+                <p className="mt-1">
                   {empDetails.name.middlename !== ""
                     ? empDetails.name.middlename
                     : "-"}
                 </p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Last Name</p>
-                <p className="font-normal">{empDetails.name.lastname}</p>
+                <h3 className="text-sm font-medium text-gray-500">Last Name</h3>
+                <p className="mt-1">{empDetails.name.lastname}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Contact</p>
-                <p className="font-normal">{empDetails.contact}</p>
+                <h3 className="text-sm font-medium text-gray-500">Contact</h3>
+                <p className="mt-1">{empDetails.contact}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Email</p>
-                <p className="font-normal">{empDetails.email}</p>
+                <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                <p className="mt-1">{empDetails.email}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Secondary Email</p>
-                <p className="font-normal">{empDetails.secondary_email}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Secondary Email
+                </h3>
+                <p className="mt-1">{empDetails.secondary_email}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">User Name</p>
-                <p className="font-normal">{empDetails.username}</p>
+                <h3 className="text-sm font-medium text-gray-500">User Name</h3>
+                <p className="mt-1">{empDetails.username}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Bank Account No</p>
-                <p className="font-normal">{empDetails.bank_account_no}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Bank Account No
+                </h3>
+                <p className="mt-1">{empDetails.bank_account_no}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Routing No</p>
-                <p className="font-normal">{empDetails.routing_no}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Routing No
+                </h3>
+                <p className="mt-1">{empDetails.routing_no}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Swift Code </p>
-                <p className="font-normal">{empDetails.swift_code}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Swift Code
+                </h3>
+                <p className="mt-1">{empDetails.swift_code}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Role</p>
-                <p className="font-normal">{empDetails.role}</p>
+                <h3 className="text-sm font-medium text-gray-500">Role</h3>
+                <p className="mt-1">{empDetails.role}</p>
               </div>
               <Button className="font-normal">
                 <PencilLine size={16} />

@@ -22,12 +22,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <UserProvider>
         <body className={inter.className}>
           {children}
           {/* Pass layouts to UserRouter */}
-          <UserRouter admin={admin} employee={employee} client={client} auth={auth} />
+          <UserRouter
+            admin={admin}
+            employee={employee}
+            client={client}
+            auth={auth}
+          />
           <Toaster />
         </body>
       </UserProvider>

@@ -1,46 +1,66 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { addDays, format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-import { DateRange } from "react-day-picker"
+import * as React from "react";
+import { addDays, format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 interface DatePickerProps {
-    date: {
-        from: Date
-        to?: Date
-    }
-    onDateChange?: (range: { from: Date | null; to: Date | null }) => void
-    placeholder?: string
-    className?: string
+  date: {
+    from: Date;
+    to?: Date;
+  };
+  onDateChange?: (range: { from: Date | null; to: Date | null }) => void;
+  placeholder?: string;
+  className?: string;
 }
 
-export function DatePickerWithRange({date, onDateChange, placeholder, className}: DatePickerProps) {
+export function DatePickerWithRange({
+  date,
+  onDateChange,
+  placeholder,
+  className,
+}: DatePickerProps) {
   const [dateRange, setDateRange] = React.useState<DateRange>({
-    from: new Date(2024, 1, 1),
-    to: addDays(new Date(2024, 12, 31), 20),
-  })
-  const [tempDateRange, setTempDateRange] = React.useState<DateRange>(dateRange)
+    from: date.from,
+    to: date.to || date.from,
+  });
+  const [tempDateRange, setTempDateRange] =
+    React.useState<DateRange>(dateRange);
+
+  React.useEffect(() => {
+    setDateRange({
+      from: date.from,
+      to: date.to || date.from,
+    });
+    setTempDateRange({
+      from: date.from,
+      to: date.to || date.from,
+    });
+  }, [date]);
 
   const handleDateChange = (date: DateRange | undefined) => {
     if (date) {
-      setTempDateRange(date)
+      setTempDateRange(date);
     }
-  }
+  };
 
   const handleSubmit = () => {
-    setDateRange(tempDateRange)
-    onDateChange?.({ from: tempDateRange.from ?? null, to: tempDateRange.to ?? null })
-  }
+    setDateRange(tempDateRange);
+    onDateChange?.({
+      from: tempDateRange.from ?? null,
+      to: tempDateRange.to ?? null,
+    });
+  };
 
   return (
     <div className={cn("grid gap-2", className)}>
@@ -84,5 +104,5 @@ export function DatePickerWithRange({date, onDateChange, placeholder, className}
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }

@@ -4,7 +4,6 @@ import { useUser } from "@/store";
 
 import Loading from "@/components/ui/loading";
 
-
 export const UserRouter = ({
   admin,
   employee,

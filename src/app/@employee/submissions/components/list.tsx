@@ -1,6 +1,6 @@
 "use client";
-import { TZDate } from '@date-fns/tz';
-import { format, addHours } from "date-fns";
+import { TZDate } from "@date-fns/tz";
+import { format } from "date-fns";
 
 import * as React from "react";
 import { useEffect, useState } from "react";
@@ -14,8 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +27,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from "lucide-react";
 import { Icons } from "@/components/ui/icons";
 
@@ -70,7 +70,6 @@ import { getGarbageSubmissions, deleteGarbageEntry, Params } from "@/services";
 import TableSkeleton from "@/components/ui/skeleton/TableSkeleton";
 import { timeStamp } from "console";
 
-
 export default function SubmissionsList() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -86,12 +85,16 @@ export default function SubmissionsList() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true); // Set loading state before fetching
+      setIsLoading(true);
       try {
-        const data = await getGarbageSubmissions(currentPage);
+        const data = await getGarbageSubmissions(1); // Always fetch first page
         const submissionsWithData = updateSubmissionsWithExpiry(data);
-        setSubmissions(submissionsWithData); 
-        setRowsPerPage(data.length < 10 ? 5 : 10); 
+        const sortedSubmissions = submissionsWithData.sort((a, b) => {
+          const dateA = new Date(a.timestamp).getTime();
+          const dateB = new Date(b.timestamp).getTime();
+          return dateB - dateA;
+        });
+        setSubmissions(sortedSubmissions);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast({
@@ -103,40 +106,53 @@ export default function SubmissionsList() {
       }
     };
 
-    const updateSubmissionsWithExpiry = (data : Submission[]) => {
+    const updateSubmissionsWithExpiry = (data: Submission[]) => {
       return data.map((submission) => {
-        const submissionTime = Date.parse(submission.timestamp); 
-        const expiryTime = submissionTime + (24 * 60 * 60 * 1000); // 24 hour in milliseconds
+        const submissionTime = Date.parse(submission.timestamp);
+        const expiryTime = submissionTime + 24 * 60 * 60 * 1000; // 24 hour in milliseconds
         const expired = Date.now() > expiryTime;
         // Return a new submission object with the calculated expiry
-        return { ...submission, expired }; 
+        return { ...submission, expired };
       });
     };
 
-    fetchData(); 
-  }, []); 
+    fetchData();
+  }, []); // Remove currentPage dependency
 
-  let lastIndex : number = currentPage * rowsPerPage;
-  let firstIndex : number = lastIndex - rowsPerPage;
-  let currentItems = submissions.slice(firstIndex, lastIndex);
+  // Calculate pagination
+  const totalPages = Math.ceil(submissions.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentItems = submissions.slice(startIndex, endIndex);
 
-  
+  const handleOnPageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when changing rows per page
+  };
 
   const formatDate = (timeStamp: string) => {
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone; 
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const utcDate = new Date(timeStamp);
     const zonedDate = new TZDate(utcDate, userTimeZone);
 
-    const formattedDate = format(zonedDate, 'PPPp');
+    const formattedDate = format(zonedDate, "PPPp");
     return formattedDate;
   };
-
 
   const handleSort = (field: "timestamp" | "id") => {
     const order = sortField === field && sortOrder === "desc" ? "asc" : "desc";
     setSortField(field);
     setSortOrder(order);
     const sortedData = [...submissions].sort((a, b) => {
+      if (field === "timestamp") {
+        const dateA = new Date(a.timestamp).getTime();
+        const dateB = new Date(b.timestamp).getTime();
+        return order === "desc" ? dateB - dateA : dateA - dateB;
+      }
       const valueA = a[field];
       const valueB = b[field];
       if (order === "asc") {
@@ -150,7 +166,7 @@ export default function SubmissionsList() {
   const openDeleteModal = (submission: Submission) => {
     if (!deleteModalOpen) {
       setDeleteModalOpen(true);
-      setSelectedRow(submission)
+      setSelectedRow(submission);
     }
   };
 
@@ -159,7 +175,7 @@ export default function SubmissionsList() {
   };
 
   const deleteEntry = async (submission: Submission) => {
-    const params : Params = {
+    const params: Params = {
       property_id: submission.property_id,
       client_id: submission.client_id,
       timestamp: submission.timestamp,
@@ -186,17 +202,12 @@ export default function SubmissionsList() {
     }
   };
 
-  const handleOnPageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  
-  if(isLoading) {
-   return (
-    <>
-    <TableSkeleton rows={5} />
-    </>
-   );
+  if (isLoading) {
+    return (
+      <>
+        <TableSkeleton rows={5} />
+      </>
+    );
   }
 
   return (
@@ -258,20 +269,30 @@ export default function SubmissionsList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-24">
                         <DropdownMenuItem
+                          onClick={() =>
+                            router.push(
+                              `submissions/view/${submission.property_id}`
+                            )
+                          }
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Eye size={16} /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           disabled={submission.expired}
                           onClick={() =>
                             router.push(
                               `submissions/edit/${submission.property_id}`
                             )
                           }
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <PencilLine size={16} /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={submission.expired}
                           onClick={() => openDeleteModal(submission)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <AlertDialogTrigger asChild>
                             <Button
@@ -325,7 +346,13 @@ export default function SubmissionsList() {
           </TableBody>
         </Table>
       </Card>
-      <Pagination data={submissions} currentPage={currentPage} rowsPerPage={rowsPerPage} onPageChange={handleOnPageChange} />
-      </>
+      <Pagination
+        data={submissions}
+        currentPage={currentPage}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handleOnPageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+      />
+    </>
   );
 }

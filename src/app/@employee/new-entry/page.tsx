@@ -1,5 +1,5 @@
 "use client";
-import React, { ReactElement, useContext, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 //context
 import { useUser } from "@/store";
@@ -297,7 +297,7 @@ const NewEntryPage = () => {
                                 onChange={handleSearchChange}
                               />
                               {propertiesLoading ? (
-                                <div className="flex justify-center">
+                                <div className="pt-4 pb-2 flex justify-center">
                                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin text-center" />
                                 </div>
                               ) : (
