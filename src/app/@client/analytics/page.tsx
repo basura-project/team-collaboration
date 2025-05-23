@@ -56,6 +56,16 @@ interface PropertyWasteData {
   wasteTypes: WasteTypeData[];
 }
 
+interface environmentalSavingsData {
+  trees: number;
+  co2: number;
+  water: number;
+  landfill: number;
+  energy: number;
+  carbon: number;
+  oil: number;
+}
+
 const expandedApiDataForTesting = [
   {
     "propertyId": "PROP00009",
@@ -119,8 +129,9 @@ export default function AnalyticsPage() {
   const [openPanels, setOpenPanels] = useState<number[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [tableData, setTableData] = useState<any>(null);
-  const [savedTrees, setSavedTrees] = useState<any>(null);
   const [testAPIData, setTestAPIData] = useState(expandedApiDataForTesting);
+  const [selectedPropery, setSelectedProperty] = useState<string>("");
+  const [environmentalSavings, setEnvironmentalSavings] = useState<environmentalSavingsData | null>(null);
 
 
   useEffect(() => {
@@ -134,6 +145,7 @@ export default function AnalyticsPage() {
   useEffect( () => {
     const fetchData = async () => {
       const tableData = await getClientWasteData();
+      setSelectedProperty(tableData[0]?.propertyId);
       setTableData(tableData)
     };
     fetchData();
@@ -141,35 +153,12 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     const fetchData = async () => { 
-      const savedTrees = await getEnvironmentData();
-      setSavedTrees(savedTrees);
+      // const savedTrees = await getEnvironmentData();
+      // setSavedTrees(savedTrees);
     }
     fetchData();
   }, [openPanels])
 
-  // const tableData = [
-  //   {
-  //     id: 1,
-  //     propertyId: "#PropertyId",
-  //     propertyType: "Property Type",
-  //     wasteCollected: 10,
-  //     wasteTypes: wasteTypes,
-  //   },
-  //   {
-  //     id: 2,
-  //     propertyId: "#PropertyId",
-  //     propertyType: "Property Type",
-  //     wasteCollected: 12.4,
-  //     wasteTypes: wasteTypes,
-  //   },
-  //   {
-  //     id: 3,
-  //     propertyId: "#PropertyId",
-  //     propertyType: "Property Type",
-  //     wasteCollected: 8.4,
-  //     wasteTypes: wasteTypes,
-  //   },
-  // ];
 
   // Toggle all panels
   const toggleAll = () => {
@@ -257,9 +246,9 @@ export default function AnalyticsPage() {
                 </Card>
           </div>
           <div className="flex justify-between items-center mt-4 mb-6">
-            <div className="flex justify-between items-center">
+            {/* <div className="flex justify-between items-center">
               <span className="font-bold mr-3">View by</span>
-              <Select>
+              <Select value={selectedValue} onValueChange={(val: string)=> setSelectedValue(val)}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -271,7 +260,7 @@ export default function AnalyticsPage() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             {/* <div>
               <Button
                 variant="outline"
@@ -290,9 +279,9 @@ export default function AnalyticsPage() {
               />
             </div> */}
           </div>
-          <h5 className="text-sm mb-4">
+          <h1 className="text-xl mb-4">
             Metrics by date range and area filters
-          </h5>
+          </h1>
           <Separator />
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -337,18 +326,22 @@ export default function AnalyticsPage() {
                     onClick={() => handleCardClick(index)}
                   >
                     <CardHeader className="flex flex-row justify-between">
-                      <p className="">{data.propertyId}</p>
+                      <p className="font-bold">{data.propertyId}</p>
                       <p className="font-bold">{data.propertyType}</p>
                       <p className="font-bold">{data.totalWasteCollected} lbs</p>
                     </CardHeader>
                     {openPanels.includes(index) ?
                       (
-                        <CardContent>
+                        <>
+                          <CardContent>
                           <div className="grid grid-cols-1 gap-4">
                             <WasteDataUI wasteData={data.wasteTypes} />
-                            <div>Trees saved</div>
                           </div>
                         </CardContent>
+                        <CardFooter className="flex justify-between">
+                          <h1 className="font-bold">Green Score</h1>
+                        </CardFooter>
+                        </>
                       ): null }
                   </Card>
                 ))}
@@ -358,7 +351,7 @@ export default function AnalyticsPage() {
             <div>
                 <div className="grid grid-cols-1">
                   <div>
-                    <WasteTrends data={tableData} />
+                    <WasteTrends propertyId={selectedPropery} data={tableData} />
                   </div>
                 </div>
             </div>

@@ -4,6 +4,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { format } from 'date-fns'; // Using date-fns for robust date formatting
 
 import { getGarbageAttributes } from "@/services/index";
+import { date } from "zod";
 
 interface WasteDate {
   date: string;
@@ -67,7 +68,7 @@ const formatMonthlyData = (monthlyTotals: {
   });
 };
 
-const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
+const WasteTrends = memo(({ data: apiData, propertyId }: { data: PropertyWasteData[], propertyId: string }) => {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [chartGranularity, setChartGranularity] = useState<ChartGranularity>('monthly'); // Default to monthly
   const chartHeight = 120;
@@ -86,8 +87,8 @@ const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
       return {}; // Return empty object
     }
 
-    const propertyData = apiData[0];
-    if (!propertyData || !propertyData.wasteTypes) {
+    const propertyData = apiData.filter((property) => property.propertyId === propertyId);
+    if (!propertyData[0] || !propertyData[0].wasteTypes) {
       console.log("Property data or wasteTypes are missing.");
       return {};
     }
@@ -96,7 +97,11 @@ const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
     const dataByWasteType: ProcessedWasteDataByType = {};
 
     // Iterate through each waste type provided in the API data
-    propertyData.wasteTypes.forEach((wasteTypeData) => {
+    propertyData[0].wasteTypes.forEach((wasteTypeData) => {
+
+      console.log(`Processing waste type`, wasteTypeData);
+      const wasteTypeLowerCase = wasteTypeData.wasteType.toLowerCase();
+
       if (chartGranularity === 'monthly') {
         // --- Monthly Aggregation Logic (Existing) ---
         const monthlyTotalsForThisType: { [yearMonth: string]: number } = {};
@@ -105,7 +110,7 @@ const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
           monthlyTotalsForThisType[yearMonth] = (monthlyTotalsForThisType[yearMonth] || 0) + dateData.value;
         });
         // Use the existing helper to format monthly data
-        dataByWasteType[wasteTypeData.wasteType] = formatMonthlyData(monthlyTotalsForThisType);
+        dataByWasteType[wasteTypeLowerCase] = formatMonthlyData(monthlyTotalsForThisType);
 
       } else {
         // --- Daily Aggregation Logic (New) ---
@@ -121,7 +126,7 @@ const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
           .map(([date, value]) => ({ date, value })) // Convert to { date: string, value: number }
           .sort((a, b) => a.date.localeCompare(b.date)); // Sort by date string "YYYY-MM-DD"
 
-        dataByWasteType[wasteTypeData.wasteType] = sortedDailyData;
+        dataByWasteType[wasteTypeLowerCase] = sortedDailyData;
       }
     });
 
@@ -149,9 +154,11 @@ const WasteTrends = memo(({ data: apiData }: { data: PropertyWasteData[] }) => {
               attribute.attribute_name.slice(1) ===
             wasteType.charAt(0).toUpperCase() + wasteType.slice(1)
         )?.color || "#000000", // map color from attributes
-      dataKey: wasteType,
+      dataKey: wasteType.toLowerCase(),
     }));
   }, [allWasteTypes]);
+
+  console.log(`Charts:`, charts);
 
   // Function to format X-axis ticks based on granularity
   const formatXAxisTick = (tickItem: string) => {
