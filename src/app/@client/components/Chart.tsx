@@ -132,7 +132,7 @@ const WasteTrends = memo(({ data: apiData, propertyId }: { data: PropertyWasteDa
 
     console.log(`Final Processed Data (Granularity: ${chartGranularity}):`, dataByWasteType);
     return dataByWasteType;
-  }, [apiData, chartGranularity]);
+  }, [apiData, propertyId, chartGranularity]);
 
   const allWasteTypes = useMemo(() => {
     if (!apiData || apiData.length === 0) return [];
@@ -144,21 +144,17 @@ const WasteTrends = memo(({ data: apiData, propertyId }: { data: PropertyWasteDa
     return Array.from(wasteTypesSet);
   }, [apiData]);
 
-  const charts = useMemo(() => {
-    return allWasteTypes.map((wasteType) => ({
-      name: wasteType.charAt(0).toUpperCase() + wasteType.slice(1),
-      color:
-        attributes.find(
-          (attribute: Attribute) =>
-            attribute.attribute_name.charAt(0).toUpperCase() +
-              attribute.attribute_name.slice(1) ===
-            wasteType.charAt(0).toUpperCase() + wasteType.slice(1)
-        )?.color || "#000000", // map color from attributes
-      dataKey: wasteType.toLowerCase(),
-    }));
-  }, [allWasteTypes]);
-
-  console.log(`Charts:`, charts);
+  const charts = allWasteTypes.map((wasteType) => ({
+    name: wasteType.charAt(0).toUpperCase() + wasteType.slice(1),
+    color:
+      attributes.find(
+        (attribute: Attribute) =>
+          attribute.attribute_name.charAt(0).toUpperCase() +
+            attribute.attribute_name.slice(1) ===
+          wasteType.charAt(0).toUpperCase() + wasteType.slice(1)
+      )?.color || "#000000", // map color from attributes
+    dataKey: wasteType.toLowerCase(),
+  }));
 
   // Function to format X-axis ticks based on granularity
   const formatXAxisTick = (tickItem: string) => {
@@ -179,7 +175,7 @@ const WasteTrends = memo(({ data: apiData, propertyId }: { data: PropertyWasteDa
 
   return (
     <div className="space-y-8 p-6">
-      {charts.map(({ name, color, dataKey }) => {
+      {charts && charts.map(({ name, color, dataKey }) => {
         const chartData = processedDataByType[dataKey];
 
         return (

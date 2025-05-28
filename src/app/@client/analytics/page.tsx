@@ -38,6 +38,7 @@ import { getAnalyticsDataForProperty, getClientWasteData, getEnvironmentData } f
 import WasteDataUI from "../components/WasteDataUI";
 import { set } from "date-fns";
 
+
 interface WasteDate {
   date: string;
   value: number;
@@ -56,14 +57,19 @@ interface PropertyWasteData {
   wasteTypes: WasteTypeData[];
 }
 
-interface environmentalSavingsData {
+interface EnvironmentalSavings {
   trees: number;
-  co2: number;
   water: number;
   landfill: number;
   energy: number;
   carbon: number;
   oil: number;
+  resources?: number; // Optional, if you want to include it
+}
+
+interface PropertyEnvironmentalSavings extends EnvironmentalSavings {
+  propertyId: string;
+  propertyName: string;
 }
 
 const expandedApiDataForTesting = [
@@ -123,15 +129,25 @@ const expandedApiDataForTesting = [
   }
 ];
 
+const savingsValues = {
+  trees: 'trees',
+  water: 'gallons',
+  landfill: 'cubic yards',
+  energy: 'kWh',
+  carbon: 'kg CO2',
+  oil: 'gallons',
+  resources: 'tons'
+}
+
 
 export default function AnalyticsPage() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openPanels, setOpenPanels] = useState<number[]>([]);
+  const [openPanels, setOpenPanels] = useState<number[]>([0]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [tableData, setTableData] = useState<any>(null);
-  const [testAPIData, setTestAPIData] = useState(expandedApiDataForTesting);
+  // const [testAPIData, setTestAPIData] = useState(expandedApiDataForTesting);
   const [selectedPropery, setSelectedProperty] = useState<string>("");
-  const [environmentalSavings, setEnvironmentalSavings] = useState<environmentalSavingsData | null>(null);
+  const [environmentalSavings, setEnvironmentalSavings] = useState<PropertyEnvironmentalSavings[] | null>(null);
 
 
   useEffect(() => {
@@ -152,12 +168,73 @@ export default function AnalyticsPage() {
   }, [])
 
   useEffect(() => {
-    const fetchData = async () => { 
-      // const savedTrees = await getEnvironmentData();
-      // setSavedTrees(savedTrees);
-    }
-    fetchData();
-  }, [openPanels])
+    const calculateEnvironmentalSavings = () => {
+      if (!tableData) {
+        setEnvironmentalSavings([]); // Clear savings if no data
+        return;
+      }
+
+      const calculatedSavings: PropertyEnvironmentalSavings[] = tableData.map((data: PropertyWasteData) => {
+        const wasteTypes = data.wasteTypes || [];
+
+        // Initialize total savings for the current property
+        const propertyTotalSavings: EnvironmentalSavings = {
+          trees: 0,
+          carbon: 0,
+          water: 0,
+          landfill: 0,
+          energy: 0,
+          oil: 0,
+          resources: 0
+
+        };
+
+        wasteTypes.forEach((item) => {
+          switch (item.wasteType) {
+            case 'Paper':
+              propertyTotalSavings.trees! += item.totalWasteCollected * 0.0085;
+              propertyTotalSavings.water! += item.totalWasteCollected * 3.5;
+              propertyTotalSavings.landfill! += item.totalWasteCollected * 0.00165;
+              propertyTotalSavings.energy! += item.totalWasteCollected * 2.05;
+              propertyTotalSavings.oil! += item.totalWasteCollected * 0.19;
+              break;
+            case 'Plastic':
+              propertyTotalSavings.landfill! += item.totalWasteCollected * 0.015;
+              propertyTotalSavings.energy! += item.totalWasteCollected * 2.887;
+              propertyTotalSavings.oil! += item.totalWasteCollected * 0.3425;
+              break;
+            case 'Metals':
+              propertyTotalSavings.oil! += item.totalWasteCollected * 0.8315;
+              propertyTotalSavings.landfill! += item.totalWasteCollected * 0.005;
+              propertyTotalSavings.energy! += item.totalWasteCollected * 7.0;
+            case 'glass':
+              propertyTotalSavings.oil! += item.totalWasteCollected * 0.0025;
+              propertyTotalSavings.landfill! += item.totalWasteCollected * 0.001;
+              propertyTotalSavings.energy! += item.totalWasteCollected * 0.021;
+              propertyTotalSavings.resources! += item.totalWasteCollected * 0.0005;
+            case 'compost':
+              propertyTotalSavings.carbon! += item.totalWasteCollected * 0.000025;
+              break;
+            default:
+              // Handle unknown waste types or do nothing
+              console.warn(`Unknown waste type encountered: ${item.wasteType}`);
+              break;
+          }
+        });
+
+        return {
+          propertyId: data.propertyId,
+          ...propertyTotalSavings,
+        };
+      });
+
+      setEnvironmentalSavings(calculatedSavings);
+      // console.log("Calculated Environmental Savings per Property:", calculatedSavings);
+    };
+
+    calculateEnvironmentalSavings();
+
+  }, [tableData, openPanels]);
 
 
   // Toggle all panels
@@ -177,6 +254,7 @@ export default function AnalyticsPage() {
 
   const handleCardClick = (index: number) => {
     setOpenPanels(prev => prev.includes(index) ? prev.filter(i => i !== index) : [...prev, index]);
+    setSelectedProperty(tableData[index].propertyId);
   };
 
   return (
@@ -215,8 +293,8 @@ export default function AnalyticsPage() {
                     <CardTitle>Month to Date Diversion Rate</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <h1 className="text-2xl font-bold">{analyticsData ? analyticsData.monthToDate.diversionRate: `--`} %</h1>
-                    {/* <p className="text-green-500">{analyticsData.totalDiversionRate.value}% from {analyticsData.totalDiversionRate.period}</p> */}
+                    <h1 className="text-2xl font-bold">{analyticsData && analyticsData.monthToDate.diversionRate} %</h1>
+                    {/* <p className="text-green-500">{analyticsData && analyticsData.totalDiversionRate}% from {analyticsData && analyticsData.totalDiversionRate.period}</p> */}
                   </CardContent>
                 </Card>
                 <Card>
@@ -246,38 +324,6 @@ export default function AnalyticsPage() {
                 </Card>
           </div>
           <div className="flex justify-between items-center mt-4 mb-6">
-            {/* <div className="flex justify-between items-center">
-              <span className="font-bold mr-3">View by</span>
-              <Select value={selectedValue} onValueChange={(val: string)=> setSelectedValue(val)}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel>Client</SelectLabel>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="property">Property</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div> */}
-            {/* <div>
-              <Button
-                variant="outline"
-                className="bg-gray-100 hover:bg-gray-200 text-black py-2 px-4 rounded"
-              >
-                Compare <Settings2 className="w-4 h-4 ml-2" />
-              </Button>
-              <input
-                type="date"
-                className="ml-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <span className="mx-2">-</span>
-              <input
-                type="date"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div> */}
           </div>
           <h1 className="text-xl mb-4">
             Metrics by date range and area filters
@@ -291,14 +337,14 @@ export default function AnalyticsPage() {
                   {openPanels ? "Collapse All" : "Expand All"}
                 </Button>
               </div>
-              <div className="grid grid-cols-1 rounded-xl overflow-hidden border-gray-300 collapsible-table">
-                <Card className="rounded-none">
+              <div className="grid grid-cols-1 rounded-t-[0.75rem] overflow-hidden border-gray-300 collapsible-table">
+                <Card className="rounded-none rounded-t-[0.75rem]">
                   <CardHeader
                     className={`flex flex-row justify-between ${styles.tableHeader}`}
                     onClick={() => setIsCollapsed(!isCollapsed)}
                   >
                     <div className="flex items-center">
-                      <p className="text-gray-500 text-sm">Property Name</p>
+                      <p className="text-gray-500 text-sm">Property ID</p>
                       <button className="text-gray-500">
                         <ChevronsUpDown />
                       </button>
@@ -325,7 +371,7 @@ export default function AnalyticsPage() {
                     key={index}
                     onClick={() => handleCardClick(index)}
                   >
-                    <CardHeader className="flex flex-row justify-between">
+                    <CardHeader className="flex flex-row justify-between items-center cursor-pointer space-y-0">
                       <p className="font-bold">{data.propertyId}</p>
                       <p className="font-bold">{data.propertyType}</p>
                       <p className="font-bold">{data.totalWasteCollected} lbs</p>
@@ -338,9 +384,47 @@ export default function AnalyticsPage() {
                             <WasteDataUI wasteData={data.wasteTypes} />
                           </div>
                         </CardContent>
-                        <CardFooter className="flex justify-between">
-                          <h1 className="font-bold">Green Score</h1>
-                        </CardFooter>
+                        <CardFooter className="flex flex-col items-start">
+                        <h1 className="font-bold mb-4">Green Score</h1>
+                        {environmentalSavings &&
+                        environmentalSavings.length > 0 &&
+                        environmentalSavings.find((savings) => savings.propertyId === data.propertyId) ? (
+                          <div className="flex flex-wrap gap-x-2 gap-y-3"> {/* Added max-w-xs and gap for spacing */}
+                            {/* Retrieve the specific property's savings once to avoid repetitive .find() calls */}
+                            {(() => {
+                              const currentPropertySavings = environmentalSavings.find(
+                                (savings) => savings.propertyId === data.propertyId
+                              );
+                              if (!currentPropertySavings) return null;
+
+                              // Create an array of savings items to easily map over them
+                              const savingsItems = [
+                                { label: '🌳 Trees', value: currentPropertySavings.trees, unit: '' },
+                                { label: '💧 Water', value: currentPropertySavings.water, unit: 'gallons' },
+                                { label: '🗑️ Landfill', value: currentPropertySavings.landfill, unit: 'cubic yards' },
+                                { label: '⚡ Energy', value: currentPropertySavings.energy, unit: 'kWh' },
+                                { label: '💨 Carbon', value: currentPropertySavings.carbon, unit: 'kg CO2' }, // Using co2 as per calculation
+                                { label: '⛽ Oil', value: currentPropertySavings.oil, unit: 'gallons' },
+                              ];
+
+                              return (
+                                <>
+                                  {savingsItems.map((item, index) => (
+                                    // Only render if value is greater than 0
+                                    item.value! > 0 && (
+                                      <p key={index} className="text-sm w-[calc(33%-0.5rem)]"> {/* Adjusted width for 3 items per row */}
+                                        {item.label}: {item.value?.toFixed(2)} {item.unit}
+                                      </p>
+                                    )
+                                  ))}
+                                </>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No Savings Data</span>
+                        )}
+                      </CardFooter>
                         </>
                       ): null }
                   </Card>
