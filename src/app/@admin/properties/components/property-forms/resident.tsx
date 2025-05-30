@@ -482,7 +482,7 @@ const handleDecrement = (bhk: keyof ApartmentType) => {
                       <SelectLabel>No. of bedrooms</SelectLabel>
                       {Object.keys(bhkCount).map((bhk) => (
                         <div key={bhk} className="flex justify-between items-center px-4">
-                          <span>{bhk.replace("bhk", "")} BHK</span>
+                          <span>{bhk.replace("bhk", "")} BDR</span>
                           <div className="flex justify-evenly items-center">
                             <Button
                               disabled={bhkCount[bhk] <= 0}
@@ -493,7 +493,7 @@ const handleDecrement = (bhk: keyof ApartmentType) => {
                               <Minus width={18} />
                             </Button>
                             <span className="max-w-4 min-w-4">
-                              <b>{bhkCount[bhk]}</b>
+                              <b>{bhkCount[bhk] >= 5 ? `${bhkCount[bhk]}+` : bhkCount[bhk]}</b>
                             </span>
                             <Button
                               disabled={bhkCount[bhk] >= 20}

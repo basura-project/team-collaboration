@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from "react";
+import React, { useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,6 +40,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { usePreloader } from "@/lib/preloader/usePreloaderHook";
+import Pagination from "@/lib/pagination";
+import TableSkeleton from "@/components/ui/skeleton/TableSkeleton";
 
 interface UserAuthFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -49,7 +51,12 @@ export default function ClientList({ className, ...props }: UserAuthFormProps) {
   const [selectedClient, setSelectedClient] = React.useState<string>("");
   const { toast } = useToast();
   const router = useRouter();
-  const { data, isDataLoading, error, setData} = usePreloader(getClients,"Clients");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { data, isDataLoading, error, setData } = usePreloader(
+    getClients,
+    "Clients"
+  );
 
   function viewClient(clientId: string) {
     router.push(`clients/view/${clientId}`);
@@ -61,7 +68,7 @@ export default function ClientList({ className, ...props }: UserAuthFormProps) {
 
   function openDeleteModal(clientId: string) {
     setDeleteModalOpen(true);
-    setSelectedClient(clientId)
+    setSelectedClient(clientId);
   }
 
   function closeDeleteModal() {
@@ -73,7 +80,7 @@ export default function ClientList({ className, ...props }: UserAuthFormProps) {
     try {
       let res: any = await deleteClient(clientID);
       if (res) {
-        setData((prevData: any) => 
+        setData((prevData: any) =>
           prevData.filter((client: any) => client.client_id !== clientID)
         );
         toast({
@@ -93,6 +100,14 @@ export default function ClientList({ className, ...props }: UserAuthFormProps) {
     }
   }
 
+  const handleOnPageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  let lastIndex: number = currentPage * rowsPerPage;
+  let firstIndex: number = lastIndex - rowsPerPage;
+  let currentItems = data && data.slice(firstIndex, lastIndex);
+
   if (error) {
     return <div>Error fetching data: {error}</div>;
   }
@@ -100,107 +115,115 @@ export default function ClientList({ className, ...props }: UserAuthFormProps) {
   return (
     <div className={cn("grid gap-2", className)} {...props}>
       {isDataLoading ? (
-        <Icons.spinner className="mx-auto my-4 h-6 w-6 animate-spin" />
+        <TableSkeleton rows={5} />
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Client Id</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Client Type</TableHead>
-              <TableHead>Phone No</TableHead>
-              <TableHead className="text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.map((row: any) => {
-              return (
-                <TableRow key={row.client_id}>
-                  <TableCell>{row.client_id}</TableCell>
-                  <TableCell>{row.client_name}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>Client Type</TableCell>
-                  <TableCell>{row.phone}</TableCell>
-                  <TableCell className="text-right">
-                    <AlertDialog open={deleteModalOpen}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="outline">
-                            <Ellipsis size={16} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-16">
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() => viewClient(row.client_id)}
-                          >
-                            <View size={16} />
-                            <span className="pl-2">View</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() => editClient(row.client_id)}
-                          >
-                            <PencilLine size={16} />
-                            <span className="pl-2">Edit</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => openDeleteModal(row.client_id)}
-                            className="cursor-pointer"
-                          >
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="link"
-                                className="-mx-[14px] -my-2 font-normal hover:no-underline"
-                              >
-                                <Trash2 size={16} />
-                                <span className="pl-2">Delete</span>
-                              </Button>
-                            </AlertDialogTrigger>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Are you absolutely sure?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently
-                            delete the client and remove the data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel
-                            onClick={() => {
-                              closeDeleteModal();
-                            }}
-                          >
-                            Cancel
-                          </AlertDialogCancel>
-                          <AlertDialogAction
-                            disabled={isLoading}
-                            onClick={() => {
-                              deleteClientById(selectedClient);
-                            }}
-                          >
-                            {isLoading ? (
-                              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              ""
-                            )}
-                            Continue
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Client Id</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Client Type</TableHead>
+                <TableHead>Phone No</TableHead>
+                <TableHead className="text-right">Action</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {currentItems?.map((row: any) => {
+                return (
+                  <TableRow key={row.client_id}>
+                    <TableCell>{row.client_id}</TableCell>
+                    <TableCell>{row.client_name}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>Client Type</TableCell>
+                    <TableCell>{row.phone}</TableCell>
+                    <TableCell className="text-right">
+                      <AlertDialog open={deleteModalOpen}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="sm" variant="outline">
+                              <Ellipsis size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-16">
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => viewClient(row.client_id)}
+                            >
+                              <View size={16} />
+                              <span className="pl-2">View</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => editClient(row.client_id)}
+                            >
+                              <PencilLine size={16} />
+                              <span className="pl-2">Edit</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openDeleteModal(row.client_id)}
+                              className="cursor-pointer"
+                            >
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="link"
+                                  className="-mx-[14px] -my-2 font-normal hover:no-underline"
+                                >
+                                  <Trash2 size={16} />
+                                  <span className="pl-2">Delete</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Are you absolutely sure?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will
+                              permanently delete the client and remove the data.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel
+                              onClick={() => {
+                                closeDeleteModal();
+                              }}
+                            >
+                              Cancel
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              disabled={isLoading}
+                              onClick={() => {
+                                deleteClientById(selectedClient);
+                              }}
+                            >
+                              {isLoading ? (
+                                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                ""
+                              )}
+                              Continue
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+          <Pagination
+            data={data}
+            currentPage={currentPage}
+            rowsPerPage={rowsPerPage}
+            onPageChange={handleOnPageChange}
+          />
+        </>
       )}
     </div>
   );

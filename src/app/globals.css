@@ -74,6 +74,15 @@
 }
 
 /* HTML: <div class="loader"></div> */
+.loaderContainer {
+  top: 0;
+  left: 0;
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+}
+
 .loader {
   width: 52px;
   height: 52px;

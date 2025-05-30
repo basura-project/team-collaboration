@@ -120,19 +120,19 @@ export default function GarbageAttributeList({
                     >
                       <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
                     </Button>
-                    {/* <Button
+                    <Button
                       onClick={() => openModal("delete", attribute)}
                       size="icon"
                       variant="link"
                       className="h-7 w-7"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                    </Button> */}
+                    </Button>
                   </CardHeader>
                   <CardContent className="flex flex-row items-center pt-2">
                     <div
                       style={{ backgroundColor: attribute.color }}
-                      className={`rounded-full app-color-code h-8 w-8 mr-4`}
+                      className={`rounded-full app-color-code h-8 w-8 max-h-8 min-w-8 mr-4`}
                     ></div>
                     <h3 className="font-semibold">
                       {attribute?.attribute_name}

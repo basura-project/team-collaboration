@@ -83,7 +83,7 @@ export default function EditClient({ clientDetails }: any) {
       phone: clientDetails.phone,
       email: clientDetails.email,
       username: clientDetails.username,
-      password: "",
+      password: "2244",
       properties: clientDetails.properties
     },
   });

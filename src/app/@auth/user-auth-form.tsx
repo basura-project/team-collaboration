@@ -47,8 +47,8 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "superadmin",
-      password: "supersecretpassword",
+      username: "",
+      password: "",
     },
   });
 
@@ -83,7 +83,7 @@ export function UserAuthForm({ className, ...props }: UserAuthFormProps) {
             router.push("/new-entry");
             break;
           case "client":
-            router.push("/client");
+            router.push("/analytics");
             break;
           default:
             router.push("/auth");

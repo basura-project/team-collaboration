@@ -1,5 +1,5 @@
 "use client";
-import React, { ReactElement, useContext, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 //context
 import { useUser } from "@/store";
@@ -217,12 +217,11 @@ const NewEntryPage = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
+    console.log(data);
     try {
       setIsSubmitting(true);
 
-      const timestamp = new Date().toLocaleString("en-US", {
-        timeZone: "America/New_York",
-      });
+      const timestamp = new Date().toISOString();
 
       await addGarbageEntry({ ...data, timestamp });
       toast({
@@ -298,7 +297,7 @@ const NewEntryPage = () => {
                                 onChange={handleSearchChange}
                               />
                               {propertiesLoading ? (
-                                <div className="flex justify-center">
+                                <div className="pt-4 pb-2 flex justify-center">
                                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin text-center" />
                                 </div>
                               ) : (

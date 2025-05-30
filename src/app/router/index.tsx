@@ -17,36 +17,36 @@ export const UserRouter = ({
 }>): React.ReactNode => {
   const [defaultRoute, setDefaultRoute] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const { user, fetchTime } = useUser();
+  const { userPromise, fetchTime } = useUser();
 
   useEffect(() => {
-
     // Set default route dynamically based on user role
     const handleRoutes = async () => {
-      if (user) {
-        if (user.role === "admin") {
-          setDefaultRoute("admin");
-        } else if (user.role === "employee") {
-          setDefaultRoute("employee");
-        } else if (user.role === "client") {
-          setDefaultRoute("client");
+      try {
+        let currentUser = await userPromise;
+        if (currentUser) {
+          // Set the default route based on user role
+          if (currentUser.role === "admin") {
+            setDefaultRoute("admin");
+          } else if (currentUser.role === "employee") {
+            setDefaultRoute("employee");
+          } else if (currentUser.role === "client") {
+            setDefaultRoute("client");
+          }
         } else {
+          // Handle the case where no user is found
           setDefaultRoute("auth");
         }
-      } else {
-        const timeOutId = setTimeout(() => {
-          setIsLoading(false);
-          setDefaultRoute("auth")
-        }, fetchTime + 500);
-
-       return () => clearTimeout(timeOutId);
-      
+      } catch (error) {
+        // Handle any errors from the promise
+        console.error("Error fetching user:", error);
+        setDefaultRoute("auth"); // Redirect to auth if there's an error
+      } finally {
+        setIsLoading(false); // Ensure loading is set to false in all cases
       }
     };
-
     handleRoutes();
-
-  }, [user, defaultRoute]);
+  }, [userPromise, defaultRoute]);
 
   // Map defaultRoute to the appropriate layout component
   const routeComponents: { [key: string]: React.ReactNode } = {
@@ -56,11 +56,7 @@ export const UserRouter = ({
     auth,
   };
 
-  return (
-    <>
-      {!isLoading ? routeComponents[defaultRoute] : <Loading />}
-    </>
-  );
+  return <>{!isLoading ? routeComponents[defaultRoute] : <Loading />}</>;
 };
 
 export default UserRouter;

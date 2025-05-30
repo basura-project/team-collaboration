@@ -1,4 +1,6 @@
 "use client";
+import { TZDate } from "@date-fns/tz";
+import { format } from "date-fns";
 
 import * as React from "react";
 import { useEffect, useState } from "react";
@@ -12,8 +14,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +27,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from "lucide-react";
 import { Icons } from "@/components/ui/icons";
 
@@ -43,7 +45,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-// First, let's properly type the interface
+import Pagination from "@/lib/pagination/index";
+
 interface GarbageAttributes {
   [key: string]: number; // For dynamic properties
 }
@@ -60,36 +63,96 @@ interface Submission {
   timestamp: string; // ISO 8601 format
   garbage_attributes: GarbageAttributes;
   created_by: string;
+  expired: boolean;
 }
 
 import { getGarbageSubmissions, deleteGarbageEntry, Params } from "@/services";
+import TableSkeleton from "@/components/ui/skeleton/TableSkeleton";
+import { timeStamp } from "console";
 
 export default function SubmissionsList() {
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [totalItems, setTotalItems] = useState(100);
   const [sortField, setSortField] = useState<"timestamp" | "id">("timestamp");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [deleteModalOpen, setDeleteModalOpen] = React.useState<boolean>(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [selectedRow, setSelectedRow] = useState<Submission>(submissions[0]);
   const { toast } = useToast();
 
   const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getGarbageSubmissions(currentPage, rowsPerPage);
-      setSubmissions(data);
+      setIsLoading(true);
+      try {
+        const data = await getGarbageSubmissions(1); // Always fetch first page
+        const submissionsWithData = updateSubmissionsWithExpiry(data);
+        const sortedSubmissions = submissionsWithData.sort((a, b) => {
+          const dateA = new Date(a.timestamp).getTime();
+          const dateB = new Date(b.timestamp).getTime();
+          return dateB - dateA;
+        });
+        setSubmissions(sortedSubmissions);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch submissions.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     };
+
+    const updateSubmissionsWithExpiry = (data: Submission[]) => {
+      return data.map((submission) => {
+        const submissionTime = Date.parse(submission.timestamp);
+        const expiryTime = submissionTime + 24 * 60 * 60 * 1000; // 24 hour in milliseconds
+        const expired = Date.now() > expiryTime;
+        // Return a new submission object with the calculated expiry
+        return { ...submission, expired };
+      });
+    };
+
     fetchData();
-  }, [currentPage, rowsPerPage]);
+  }, []); // Remove currentPage dependency
+
+  // Calculate pagination
+  const totalPages = Math.ceil(submissions.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentItems = submissions.slice(startIndex, endIndex);
+
+  const handleOnPageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleRowsPerPageChange = (newRowsPerPage: number) => {
+    setRowsPerPage(newRowsPerPage);
+    setCurrentPage(1); // Reset to first page when changing rows per page
+  };
+
+  const formatDate = (timeStamp: string) => {
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const utcDate = new Date(timeStamp);
+    const zonedDate = new TZDate(utcDate, userTimeZone);
+
+    const formattedDate = format(zonedDate, "PPPp");
+    return formattedDate;
+  };
 
   const handleSort = (field: "timestamp" | "id") => {
     const order = sortField === field && sortOrder === "desc" ? "asc" : "desc";
     setSortField(field);
     setSortOrder(order);
     const sortedData = [...submissions].sort((a, b) => {
+      if (field === "timestamp") {
+        const dateA = new Date(a.timestamp).getTime();
+        const dateB = new Date(b.timestamp).getTime();
+        return order === "desc" ? dateB - dateA : dateA - dateB;
+      }
       const valueA = a[field];
       const valueB = b[field];
       if (order === "asc") {
@@ -100,9 +163,10 @@ export default function SubmissionsList() {
     setSubmissions(sortedData);
   };
 
-  const openDeleteModal = (submission: Params) => {
+  const openDeleteModal = (submission: Submission) => {
     if (!deleteModalOpen) {
       setDeleteModalOpen(true);
+      setSelectedRow(submission);
     }
   };
 
@@ -110,13 +174,14 @@ export default function SubmissionsList() {
     setDeleteModalOpen(false);
   };
 
-  const deleteEntry = async (submission: Params) => {
-    const params = {
+  const deleteEntry = async (submission: Submission) => {
+    const params: Params = {
       property_id: submission.property_id,
       client_id: submission.client_id,
       timestamp: submission.timestamp,
       created_by: submission.created_by,
     };
+    console.log(params);
     try {
       await deleteGarbageEntry(params);
       setDeleteModalOpen(false);
@@ -137,14 +202,17 @@ export default function SubmissionsList() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <>
+        <TableSkeleton rows={5} />
+      </>
+    );
+  }
+
   return (
-    <div className="space-y-2">
-      <div className="text-2xl font-bold">Submissions</div>
-      <div className="text-md text-gray-800 pt-0">List of submissions</div>
-
-      <Separator className="my-4" />
-
-      <Card className="p-4">
+    <>
+      <Card className="p-4 mt-4 shadow-none">
         <Table>
           <TableHeader>
             <TableRow>
@@ -174,9 +242,9 @@ export default function SubmissionsList() {
           </TableHeader>
 
           <TableBody>
-            {submissions.map((submission) => (
+            {currentItems.map((submission) => (
               <TableRow key={submission.id}>
-                <TableCell>{submission.timestamp}</TableCell>
+                <TableCell>{formatDate(submission.timestamp)}</TableCell>
                 {/* <TableCell>{submission.id}</TableCell> */}
                 <TableCell>
                   <Button variant="outline" size="sm">
@@ -203,16 +271,28 @@ export default function SubmissionsList() {
                         <DropdownMenuItem
                           onClick={() =>
                             router.push(
+                              `submissions/view/${submission.property_id}`
+                            )
+                          }
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Eye size={16} /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={submission.expired}
+                          onClick={() =>
+                            router.push(
                               `submissions/edit/${submission.property_id}`
                             )
                           }
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <PencilLine size={16} /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          disabled={submission.expired}
                           onClick={() => openDeleteModal(submission)}
-                          className="flex items-center gap-2"
+                          className="flex items-center gap-2 cursor-pointer"
                         >
                           <AlertDialogTrigger asChild>
                             <Button
@@ -247,7 +327,7 @@ export default function SubmissionsList() {
                         <AlertDialogAction
                           disabled={isLoading}
                           onClick={() => {
-                            deleteEntry(submission);
+                            deleteEntry(selectedRow);
                           }}
                         >
                           {isLoading ? (
@@ -266,49 +346,13 @@ export default function SubmissionsList() {
           </TableBody>
         </Table>
       </Card>
-
-      <div className="flex items-center justify-between py-4">
-        <div className="text-sm text-gray-500">
-          {`1 of ${Math.ceil(totalItems / rowsPerPage)} selected`}
-        </div>
-        <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
-          <select
-            className="p-2 border border-gray-300 rounded"
-            value={rowsPerPage}
-            onChange={(e) => setRowsPerPage(Number(e.target.value))}
-          >
-            {[10, 20, 30, 50].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-          <span>{`Page ${currentPage} of ${Math.ceil(
-            totalItems / rowsPerPage
-          )}`}</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            {"<"}
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              setCurrentPage((prev) =>
-                Math.min(prev + 1, Math.ceil(totalItems / rowsPerPage))
-              )
-            }
-            disabled={currentPage === Math.ceil(totalItems / rowsPerPage)}
-          >
-            {">"}
-          </Button>
-        </div>
-      </div>
-    </div>
+      <Pagination
+        data={submissions}
+        currentPage={currentPage}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handleOnPageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+      />
+    </>
   );
 }

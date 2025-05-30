@@ -15,6 +15,7 @@ export interface UserContextInterface {
   user: User;
   setUser: Dispatch<SetStateAction<User>>;
   fetchTime: number;
+  userPromise: Promise<User>;
 }
 
 // Making the context value optional and handling cases where it's accessed without a provider.
@@ -26,17 +27,18 @@ type UserProviderProps = {
 
 export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [apiRequestTime, setApiRequestTime] = useState(0); 
+  const [apiRequestTime, setApiRequestTime] = useState(0);
+  const [isLoading, setIsLoading] = useState(true); // Add a loading state
+
 
 
   useEffect(() => {
-
     const fetchUserDetails = async () => {
       const startTime = performance.now();
       const access_token = Cookies.get('access_token');
       if (access_token) {
         try {
-          const res = await userDetails(); // Fetch user details
+          const res = await userDetails();
           if (res) {
             setUser({
               name: res.data.name && res.data.name.firstname + res.data.name.lastname,
@@ -49,16 +51,39 @@ export function UserProvider({ children }: UserProviderProps) {
           console.error('Error fetching user details:', error);
         } finally {
           const endTime = performance.now();
-          setApiRequestTime(endTime - startTime); 
+          setApiRequestTime(endTime - startTime);
+          setIsLoading(false); // Set loading to false after fetching
         }
+      } else {
+        setIsLoading(false); // Set loading to false if no access token
       }
     };
 
     fetchUserDetails();
   }, []);
 
+  const userPromise = new Promise<User>((resolve, reject) => {  // Create a Promise for the user
+    if (user) {
+      resolve(user);
+    } else if (!isLoading) { 
+      reject("User not found"); 
+    } else {
+      // Wait for user to be set or loading to finish
+      const intervalId = setInterval(() => {
+        if (user) {
+          clearInterval(intervalId);
+          resolve(user);
+        } else if (!isLoading) {
+          clearInterval(intervalId);
+          reject(new Error("User not found"));
+        }
+      }, 100); // Check every 100ms
+    }
+  });
+
   return (
-    <UserContext.Provider value={{ user: user as User, setUser: setUser as Dispatch<SetStateAction<User>>, fetchTime: apiRequestTime }}>
+    <UserContext.Provider value={{ user: user as User, setUser: setUser as Dispatch<SetStateAction<User>>, fetchTime: apiRequestTime,  userPromise: userPromise  // Provide the Promise in the context
+    }}>
       {children}
     </UserContext.Provider>
   );

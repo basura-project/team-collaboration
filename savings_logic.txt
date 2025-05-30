@@ -1,0 +1,57 @@
+# Environmental Savings Endpoints
+SAVINGS_FACTORS = {
+    'paper': {
+        'trees': (0.0085, 'trees'),
+        'oil': (0.19, 'gallons'),
+        'landfill': (0.00165, 'cubic yards'),
+        'water': (3.5, 'gallons'),
+        'energy': (2.05, 'kWh')
+    },
+    'glass': {
+        'oil': (0.0025, 'gallons'),
+        'landfill': (0.001, 'cubic yards'),
+        'resources': (0.0005, 'tons'),
+        'energy': (0.021, 'kWh')
+    },
+    'metal': {
+        'oil': (0.8315, 'gallons'),
+        'landfill': (0.005, 'cubic yards'),
+        'energy': (7.0, 'kWh')
+    },
+    'plastic': {
+        'oil': (0.3425, 'gallons'),
+        'landfill': (0.015, 'cubic yards'),
+        'energy': (2.887, 'kWh')
+    },
+    'compost': {
+        'carbon': (0.000025, 'metric tons')
+    }
+}
+
+
+@app.route('/api/savings/<material>/<metric>', methods=['GET'])
+@jwt_required()
+def get_savings(material, metric):
+    """
+    Calculate environmental savings for a given material and metric.
+    Query parameter:
+      - weight (float): weight in pounds
+    """
+    weight = request.args.get('weight', type=float)
+    if weight is None:
+        return jsonify({'error': 'weight query parameter is required and must be a number'}), 400
+
+    material_factors = SAVINGS_FACTORS.get(material)
+    if not material_factors or metric not in material_factors:
+        return jsonify({'error': f'Invalid material or metric: {material}/{metric}'}), 400
+
+    factor, unit = material_factors[metric]
+    savings_value = round(weight * factor, 6)
+
+    return jsonify({
+        'material': material,
+        'metric': metric,
+        'weight_lbs': weight,
+        'value': savings_value,
+        'unit': unit
+    }), 200

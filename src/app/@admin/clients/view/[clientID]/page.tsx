@@ -7,6 +7,7 @@ import { getClientDetails } from "@/services/index";
 import { PencilLine } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 import {
   Breadcrumb,
@@ -22,7 +23,6 @@ export default function ViewClient({ params: { clientID } }: any) {
   const [isError, setIsError] = React.useState<string>("");
   const [clientDetails, setClientDetails] = React.useState<any>({});
   const [showAll, setShowAll] = React.useState(false);
-
 
   React.useEffect(() => {
     (async () => {
@@ -43,7 +43,8 @@ export default function ViewClient({ params: { clientID } }: any) {
 
   const showAllProperties = () => setShowAll(true);
 
-  const {client_id, client_name, phone, email, username, properties} = clientDetails
+  const { client_id, client_name, phone, email, username, properties } =
+    clientDetails;
 
   return (
     <div className="grid gap-2">
@@ -70,43 +71,49 @@ export default function ViewClient({ params: { clientID } }: any) {
             </h2>
           </div>
           <Separator className="my-6" />
-          {isLoading && (
-            <p className="font-regular space-y-2 pt-2 md:block">Loading...</p>
-          )}
+          {isLoading && <ListSkeleton rows={8} />}
           {!isLoading && isError == "" && (
             <div className="flex-1 py-2">
-              {/* <div className="mb-3">
-                <p className="font-medium">Client Id</p>
-                <p className="font-normal">{client_id}</p>
-              </div> */}
               <div className="mb-3">
-                <p className="font-medium">Client Name :</p>
-                <p className="font-normal">{client_name}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Client Name
+                </h3>
+                <p className="mt-1">{client_name}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Client Phone No :</p>
-                <p className="font-normal">{phone}</p>
+                <h3 className="text-sm font-medium text-gray-500">
+                  Client Phone No
+                </h3>
+                <p className="mt-1">{phone}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Email :</p>
-                <p className="font-normal">{email}</p>
+                <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                <p className="mt-1">{email}</p>
               </div>
               <div className="mb-3">
-                <p className="font-medium">Properties :</p>
-                <ul className="flex items-center flex-wrap">
-                  {(showAll ? properties : properties?.slice(0, 2)).map((propertyID: string, index: number) => (
-                    <li key={propertyID} className="mr-2">
-                      <p className="text-sm text-blue-700">
-                        <Link href={`/properties/view/${propertyID}`}>
-                          {index > 0 && ", "}
-                          {propertyID}
-                        </Link>
-                      </p>
-                    </li>
-                  ))}
+                <h3 className="text-sm font-medium text-gray-500">
+                  Properties
+                </h3>
+                <ul className="flex items-center flex-wrap mt-1">
+                  {(showAll ? properties : properties?.slice(0, 2)).map(
+                    (propertyID: string, index: number) => (
+                      <li key={propertyID} className="mr-2">
+                        <p className="text-sm text-blue-700">
+                          <Link href={`/properties/view/${propertyID}`}>
+                            {index > 0 && ", "}
+                            {propertyID}
+                          </Link>
+                        </p>
+                      </li>
+                    )
+                  )}
                   {!showAll && properties.length > 2 && (
                     <li>
-                      <Button onClick={showAllProperties} variant="secondary" className="ml-2 p-2 h-6">
+                      <Button
+                        onClick={showAllProperties}
+                        variant="secondary"
+                        className="ml-2 p-2 h-6"
+                      >
                         +{properties.length - 2}
                       </Button>
                     </li>
@@ -114,15 +121,12 @@ export default function ViewClient({ params: { clientID } }: any) {
                 </ul>
               </div>
               <div className="mb-3">
-                <p className="font-medium">User Name :</p>
-                <p className="font-normal">{username}</p>
+                <h3 className="text-sm font-medium text-gray-500">User Name</h3>
+                <p className="mt-1">{username}</p>
               </div>
               <Button className="font-normal">
                 <PencilLine size={16} />
-                <Link
-                  className="pl-2"
-                  href={`/clients/edit/${client_id}`}
-                >
+                <Link className="pl-2" href={`/clients/edit/${client_id}`}>
                   Edit
                 </Link>
               </Button>

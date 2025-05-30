@@ -2,12 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-
-import { getPropertyDetails } from "@/services/index";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PencilLine } from "lucide-react";
+import { ListSkeleton } from "@/components/ui/skeleton/ListSkeleton";
 
 import {
   Breadcrumb,
@@ -57,20 +56,6 @@ export default function ViewEmployee({ params: { propId } }: any) {
   };
 
   React.useEffect(() => {
-    // (async () => {
-    //   try {
-    //     let res = await getPropertyDetails(propId);
-    //     if (res.data) {
-    //       setPropDetails(res.data);
-    //     }
-    //     setIsLoading(false);
-    //     setIsError("");
-    //   } catch (e: any) {
-    //     setIsLoading(false);
-    //     setIsError(e.response.data.error);
-    //     console.log(e);
-    //   }
-    // })();
     setIsLoading(false);
   }, [isLoading]);
 
@@ -168,21 +153,17 @@ export default function ViewEmployee({ params: { propId } }: any) {
             </h2>
           </div>
           <Separator className="my-6" />
-          {isLoading && (
-            <p className="font-regular space-y-2 pt-2 md:block">Loading...</p>
-          )}
+          {isLoading && <ListSkeleton rows={8} />}
           <div className="flex-1 py-2">
             {!isLoading &&
               isError == "" &&
               Object.keys(propertyDetailsSchema["Resident Buildings"]).map(
                 (field) => (
-                  <div className="mb-3">
-                    <p className="font-medium">
-                      {propertyDetailsSchema["Resident Buildings"][field]}:
-                    </p>
-                    <p className="mt-1 font-normal gray-400 opacity-70">
-                      {propertyDetails[field] ?? "-"}
-                    </p>
+                  <div className="mb-3" key={field}>
+                    <h3 className="text-sm font-medium text-gray-500">
+                      {propertyDetailsSchema["Resident Buildings"][field]}
+                    </h3>
+                    <p className="mt-1">{propertyDetails[field] ?? "-"}</p>
                   </div>
                 )
               )}

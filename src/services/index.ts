@@ -121,7 +121,6 @@ export const suggestID = async (type: string) => {
   }
 };
 
-
 // Add new employee
 export const addEmployee = async (employeeDetails: any) => {
   try {
@@ -168,7 +167,9 @@ export const deleteEmployee = async (employee_id: string) => {
 // Get list of employees
 export const getEmployees = async () => {
   try {
-    const response = await apiService.get("employees", { params: { sort_by: 'employee_id', sort_order: 'desc' }});
+    const response = await apiService.get("employees", {
+      params: { sort_by: "employee_id", sort_order: "desc" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching employees list", error);
@@ -201,7 +202,9 @@ export const addProperty = async (propertyDetails: any) => {
 // Get list of properties
 export const getProperties = async () => {
   try {
-    const response = await apiService.get("properties", { params: { sort_by: 'property_id', sort_order: 'asc' }});
+    const response = await apiService.get("properties", {
+      params: { sort_by: "property_id", sort_order: "desc" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching properties list", error);
@@ -219,7 +222,7 @@ export const getUnAssignedProperties = async () => {
     console.error("Error fetching unassigned properties", error);
     throw error;
   }
-}
+};
 
 // Get property details
 export const getPropertyDetails = async (propertyId: string) => {
@@ -263,7 +266,9 @@ export const deleteProperty = async (propertyId: string) => {
 //Get Clients
 export const getClients = async () => {
   try {
-    const response = await apiService.get("clients", { params: { sort_by: 'client_id', sort_order: 'asc' }});
+    const response = await apiService.get("clients", {
+      params: { sort_by: "client_id", sort_order: "desc" },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching clients list", error);
@@ -298,15 +303,9 @@ export const addClient = async (clientDetails: any) => {
 };
 
 // Edit Client
-export const editClient = async (
-  client_id: string,
-  clientDetails: any
-) => {
+export const editClient = async (client_id: string, clientDetails: any) => {
   try {
-    const response = await apiService.put(
-      `client/${client_id}`,
-      clientDetails
-    );
+    const response = await apiService.put(`client/${client_id}`, clientDetails);
     return response;
   } catch (error) {
     console.error("Error updating employee details", error);
@@ -325,7 +324,6 @@ export const deleteClient = async (client_id: string) => {
   }
 };
 
-
 //Get Garbage attributes
 export const getGarbageAttributes = async () => {
   try {
@@ -337,15 +335,18 @@ export const getGarbageAttributes = async () => {
   }
 };
 
-
 // Add a garbage attribute
 export const addGarbageAttribute = async (garbageAttribute: any) => {
   try {
-    const response = await apiService.post("garbage-attributes", garbageAttribute, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await apiService.post(
+      "garbage-attributes",
+      garbageAttribute,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response;
   } catch (error) {
     console.error("Error adding a garbage attribute", error);
@@ -375,7 +376,9 @@ export const editGarbageAttribute = async (
 
 export const deleteGarbageAttribute = async (garbageAttribute_name: string) => {
   try {
-    const response = await apiService.delete(`garbage-attributes/${garbageAttribute_name}`);
+    const response = await apiService.delete(
+      `garbage-attributes/${garbageAttribute_name}`
+    );
     return response;
   } catch (error) {
     console.error("Error deleting garbage attribute", error);
@@ -414,17 +417,25 @@ export const getPropertyDetailsForAddEntry = async (propertyId: string) => {
 };
 
 // Get garbage submissions
-export const getGarbageSubmissions = async (
-  page?: number,
-  pageSize?: number
-) => {
+export const getGarbageSubmissions = async (page?: number) => {
   try {
     const response = await apiService.get("submissions", {
-      params: { page, page_size: pageSize },
+      params: { page },
     });
     return response.data;
   } catch (error) {
     console.error("Error fetching garbage submissions", error);
+    throw error;
+  }
+};
+
+// Get single garbage submission
+export const getGarbageSubmission = async (propertyId: string) => {
+  try {
+    const response = await apiService.get(`submissions/${propertyId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching garbage submission", error);
     throw error;
   }
 };
@@ -444,10 +455,74 @@ export const deleteGarbageEntry = async (params: Params) => {
         "Content-Type": "application/json", // Set content type
       },
       data: params, // Pass JSON in the request body
-      });
+    });
     return response;
   } catch (error) {
     console.error("Error deleting garbage entry", error);
+    throw error;
+  }
+};
+
+//Fetch analytics Data
+export const getAnalyticsData = async (fromDate: string, toDate: string) => {
+  try {
+    const response = await apiService.get("analytics", {
+      params: { start_date: fromDate, end_date: toDate },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+};
+
+export const getAnalyticsDataForProperty = async () => {
+  try {
+    const response = await apiService.get("api/client/overview");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+};
+
+interface WasteDataQueryParams {
+  startDate?: string;
+  endDate?: string;
+  clientId?: number;
+  // Add other query parameters as needed
+}
+
+export const getClientWasteData = async (
+  queryParams: WasteDataQueryParams = {}
+): Promise<any> => {
+  try {
+    const response = await apiService.get("api/waste-data", {
+      params: queryParams,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics data", error);
+    throw error;
+  }
+};
+
+export const getEnvironmentData = async (
+  material: String,
+  metric: String,
+  weight: Number
+) => {
+  try {
+    const response = await apiService.get("api/savings/", {
+      params: {
+        material: material,
+        metric: metric,
+        weight: weight,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching environment data", error);
     throw error;
   }
 };
