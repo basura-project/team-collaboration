@@ -1,7 +1,7 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-let BASEURL = "https://basura-d389d141409a.herokuapp.com/";
+let BASEURL = "https://basura-app-ba8f0c65e78f.herokuapp.com/";
 
 const apiService = axios.create({
   baseURL: BASEURL,
