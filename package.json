@@ -1,6 +1,7 @@
 {
   "name": "basura",
   "version": "0.1.0",
+  "buildNumber": 1,
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,0 +1,64 @@
+name: Auto Increment Build Number
+
+on:
+  push:
+    branches:
+      - staging
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  increment-build:
+    runs-on: ubuntu-latest
+
+    # Only run if the push is not from this workflow itself to avoid infinite loops
+    if: "!contains(github.event.head_commit.message, 'build number')"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Read current build number
+        id: read-build
+        run: |
+          BUILD_NUMBER=$(node -p "require('./package.json').buildNumber")
+          echo "current_build=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "Current build number: $BUILD_NUMBER"
+
+      - name: Increment build number
+        id: increment-build
+        run: |
+          CURRENT_BUILD=${{ steps.read-build.outputs.current_build }}
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+          echo "new_build=$NEW_BUILD" >> $GITHUB_OUTPUT
+          echo "New build number: $NEW_BUILD"
+
+          # Update package.json with new build number
+          node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            pkg.buildNumber = '$NEW_BUILD';
+            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Commit and push changes
+        run: |
+          git add package.json
+          git commit -m "build number: ${{ steps.increment-build.outputs.new_build }}"
+          git push origin ${{ github.ref_name }}
